@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html><html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,39 +6,25 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/feather-icons"></script>
 <style>
-:root {
-  --color-primary: #3B82F6;
-  --color-bar: #3B82F6;
-}
-body { background-color: var(--color-primary); transition: background-color 0.5s; }
+:root { --color-primary: #3B82F6; --color-bar: #3B82F6; }
+body { transition: background-color 0.5s ease; }
 .progress-bar { transition: width 0.5s ease-in-out; }
-.notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
-.global-msg { position: fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:2rem; border-radius:1rem; box-shadow:0 0 20px rgba(0,0,0,0.3); z-index:1000; display:none; }
-.global-msg h2 { font-size:1.5rem; font-weight:bold; margin-bottom:1rem; }
-.global-msg button { margin-top:1rem; background:var(--color-primary); color:white; padding:0.5rem 1rem; border:none; border-radius:0.5rem; cursor:pointer; }
+.notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 3s forwards; }
 @keyframes slideIn { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+#globalMessage { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background-color:white; padding:2rem; border-radius:1rem; box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:100; }
 </style>
 </head>
-<body class="min-h-screen">
-
-<!-- Notificação -->
-<div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
+<body class="bg-gray-50 min-h-screen"><!-- Notificação --><div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
   <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
     <i data-feather="alert-circle" class="mr-2"></i>
     <span id="notification-message"></span>
   </div>
-</div>
-
-<!-- Mensagem Global -->
-<div id="globalMessage" class="global-msg">
-  <h2>Mensagem da Moderação</h2>
-  <p id="globalMessageContent"></p>
-  <button onclick="closeGlobalMessage()">Fechar</button>
-</div>
-
-<!-- Modal Configurações -->
-<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+</div><!-- Global Message --><div id="globalMessage">
+  <h2 class="text-xl font-bold mb-2">Mensagem da Moderação</h2>
+  <p id="globalText" class="mb-4"></p>
+  <button onclick="closeGlobalMessage()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Fechar</button>
+</div><!-- Modal Configurações --><div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
   <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
     <div class="flex justify-between items-center mb-6 border-b pb-4">
       <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
@@ -48,27 +33,8 @@ body { background-color: var(--color-primary); transition: background-color 0.5s
       </button>
     </div>
     <div class="space-y-6">
-      <!-- Cores -->
-      <div>
-        <h4 class="font-semibold mb-2">Tema do Sistema</h4>
-        <div class="flex gap-3 mb-4">
-          <button onclick="changeThemeColor('#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeThemeColor('#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeThemeColor('#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeThemeColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeThemeColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
-        </div>
-        <h4 class="font-semibold mb-2">Cor das Barras</h4>
-        <div class="flex gap-3">
-          <button onclick="changeBarColor('#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeBarColor('#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeBarColor('#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeBarColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeBarColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
-        </div>
-      </div>
       <!-- Login Admin -->
-      <div class="pt-4 border-t">
+      <div>
         <h4 class="font-semibold mb-2">Login do Administrador</h4>
         <div class="mb-3">
           <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
@@ -80,39 +46,43 @@ body { background-color: var(--color-primary); transition: background-color 0.5s
       </div>
     </div>
   </div>
-</div>
-
-<!-- Header -->
-<div class="container mx-auto px-4 py-8">
+</div><!-- Modal Admin --><div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h3 class="text-2xl font-bold text-gray-800">Área do Administrador</h3>
+      <button onclick="closeAdminModal()" class="text-gray-500 hover:text-gray-700">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <button onclick="sendGlobalMessagePrompt()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Enviar Mensagem Global</button>
+      <button onclick="openProofsModal()" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Ver Provas Enviadas</button>
+      <div>
+        <h4 class="font-semibold mb-2">Personalizar Cores</h4>
+        <input type="color" id="siteColorPicker" onchange="changeSiteColor(this.value)"> Cor do Site<br>
+        <input type="color" id="buttonColorPicker" onchange="changeButtonColor(this.value)"> Cor dos Botões
+      </div>
+    </div>
+  </div>
+</div><!-- Header --><div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl font-bold text-white">Progresso em Foco</h1>
+    <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
     <div class="flex space-x-4">
       <button onclick="openSettingsModal()" class="p-2 rounded-full hover:bg-gray-200"><i data-feather="settings"></i></button>
       <button id="adminBtn" class="p-2 rounded-full hover:bg-gray-200 hidden" onclick="openAdminModal()"><i data-feather="shield"></i></button>
     </div>
-  </header>
-
-  <!-- Form Adicionar Meta -->
-  <div class="bg-white rounded-lg shadow p-6 mb-8">
+  </header>  <!-- Form Adicionar Meta -->  <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Adicionar Nova Meta</h2>
     <div class="flex gap-4">
-      <input id="memberName" type="text" placeholder="Seu nome" class="border rounded p-2 flex-1">
       <input id="newBarName" type="text" placeholder="Nome da Meta" class="border rounded p-2 flex-1">
+      <input id="memberName" type="text" placeholder="Seu Nome" class="border rounded p-2 flex-1">
       <button id="addBarBtn" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Adicionar</button>
     </div>
-  </div>
-
-  <!-- Placar Geral -->
-  <div class="bg-white rounded-lg shadow p-6 mb-8">
+  </div>  <!-- Placar Geral -->  <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Placar Geral</h2>
     <div id="leaderboard" class="space-y-2"></div>
-  </div>
-
-  <!-- Barras de progresso -->
-  <div id="barsContainer" class="space-y-6"></div>
-</div>
-
-<script>
+  </div>  <!-- Barras de progresso -->  <div id="barsContainer" class="space-y-6"></div>
+</div><script>
 feather.replace();
 
 let bars = JSON.parse(localStorage.getItem('progressBars')) || [];
@@ -121,11 +91,11 @@ let themeColor = localStorage.getItem('themeColor') || '#3B82F6';
 let adminCredentials = {username:'admin', password:'123456'};
 let isAdmin = false;
 
-// Modais
 function openSettingsModal(){document.getElementById('settingsModal').classList.remove('hidden');}
 function closeSettingsModal(){document.getElementById('settingsModal').classList.add('hidden');}
+function openAdminModal(){if(isAdmin) document.getElementById('adminModal').classList.remove('hidden');}
+function closeAdminModal(){document.getElementById('adminModal').classList.add('hidden');}
 
-// Login Admin
 function loginAdmin(){
   const user=document.getElementById('adminUsername').value;
   const pass=document.getElementById('adminPassword').value;
@@ -134,35 +104,35 @@ function loginAdmin(){
     document.getElementById('adminBtn').classList.remove('hidden');
     isAdmin=true;
     closeSettingsModal();
-  } else { alert('Usuário ou senha incorretos.'); }
+  }else{
+    alert('Usuário ou senha incorretos.');
+  }
 }
 
-// Mudança de cores
-function changeThemeColor(hex){themeColor=hex;document.documentElement.style.setProperty('--color-primary',hex);localStorage.setItem('themeColor',hex);}
-function changeBarColor(hex){barColor=hex;document.documentElement.style.setProperty('--color-bar',hex);localStorage.setItem('barColor',hex);renderBars();}
+function changeSiteColor(color){document.body.style.backgroundColor=color;}
+function changeButtonColor(color){document.querySelectorAll('button').forEach(b=>b.style.backgroundColor=color);}
 
-// Adicionar barra
 document.getElementById('addBarBtn').addEventListener('click',()=>{
-  const name = document.getElementById('newBarName').value.trim();
-  const member = document.getElementById('memberName').value.trim() || 'Membro';
+  const name=document.getElementById('newBarName').value.trim();
+  const member=document.getElementById('memberName').value.trim()||'Membro';
   if(!name){alert('Digite o nome da meta'); return;}
-  bars.push({name:name, progress:0, proofs:[], member:member});
+  bars.push({name:name,progress:0,proofs:[],member:member});
   localStorage.setItem('progressBars',JSON.stringify(bars));
   document.getElementById('newBarName').value='';
+  document.getElementById('memberName').value='';
   renderBars();
   updateLeaderboard();
 });
 
-// Renderização de barras
 function renderBars(){
-  const container = document.getElementById('barsContainer');
+  const container=document.getElementById('barsContainer');
   container.innerHTML='';
   bars.forEach((bar,i)=>{
     const barEl=document.createElement('div');
     barEl.className='bg-white rounded-lg shadow p-6';
     barEl.innerHTML=`
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">${bar.name} (${bar.member})</h3>
+        <h3 class="text-lg font-semibold">${bar.name} - ${bar.member}</h3>
         <div>
           <button onclick="editBarName(${i})" class="p-1 text-gray-500 hover:text-blue-500" title="Editar nome"><i data-feather="edit-2"></i></button>
           <button onclick="deleteBar(${i})" class="p-1 text-gray-500 hover:text-red-500" title="Excluir"><i data-feather="trash-2"></i></button>
@@ -187,56 +157,33 @@ function renderBars(){
   feather.replace();
 }
 
-// Editar barra
 function editBarName(index){
-  const newName=prompt('Digite o novo nome da meta', bars[index].name);
-  if(newName){bars[index].name=newName; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars();}
+  const newName=prompt('Digite o novo nome da meta',bars[index].name);
+  if(newName){bars[index].name=newName;localStorage.setItem('progressBars',JSON.stringify(bars));renderBars();updateLeaderboard();}
 }
 
-// Excluir barra
-function deleteBar(index){ bars.splice(index,1); localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); updateLeaderboard(); }
+function deleteBar(index){
+  bars.splice(index,1);localStorage.setItem('progressBars',JSON.stringify(bars));renderBars();updateLeaderboard();
+}
 
-// Upload prova
 function handleFileUpload(index,file){
-  if(!file) return;
+  if(!file)return;
   const reader=new FileReader();
   reader.onload=function(e){
-    bars[index].proofs.push({date:new Date().toISOString(), image:e.target.result});
+    bars[index].proofs.push({date:new Date().toISOString(),image:e.target.result});
     bars[index].progress=Math.min(bars[index].progress+10,100);
     localStorage.setItem('progressBars',JSON.stringify(bars));
-    renderBars();
-    updateLeaderboard();
+    renderBars();updateLeaderboard();
   };
   reader.readAsDataURL(file);
 }
 
-// Placar geral
 function updateLeaderboard(){
   const lb=document.getElementById('leaderboard');
   lb.innerHTML='';
-  const sorted=[...bars].sort((a,b)=>b.progress-b.progress);
+  const sorted=[...bars].sort((a,b)=>b.progress-a.progress);
   sorted.forEach(b=>{
     const div=document.createElement('div');
     div.className='flex justify-between bg-gray-100 p-2 rounded';
     div.innerHTML=`<span>${b.member} - ${b.name}</span><span>${b.progress}%</span>`;
     lb.appendChild(div);
-  });
-}
-
-// Mensagem global
-function sendGlobalMessage(msg){
-  const global=document.getElementById('globalMessage');
-  document.getElementById('globalMessageContent').innerText=msg;
-  global.style.display='block';
-}
-function closeGlobalMessage(){document.getElementById('globalMessage').style.display='none';}
-
-// Inicialização
-document.addEventListener('DOMContentLoaded',()=>{
-  document.documentElement.style.setProperty('--color-primary',themeColor);
-  renderBars();
-  updateLeaderboard();
-});
-</script>
-</body>
-  </html>
