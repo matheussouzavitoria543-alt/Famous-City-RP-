@@ -1,634 +1,263 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Progresso em Foco — Final</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progresso em Foco</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/feather-icons"></script>
 <style>
   :root {
-    --site-bg: #f8fafc;
-    --btn-color: #3B82F6;
+    --site-color: #3B82F6;
     --bar-color: #3B82F6;
+    --button-color: #3B82F6;
   }
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    background-color:var(--site-bg);
-    background-size:cover;
-    background-position:center;
-    transition:background-color .25s ease, background-image .25s ease;
-  }
-  .progress-bar{ transition: width .45s ease-in-out; border-radius:999px; }
-  .btn-primary{ background:var(--btn-color); color:#fff; }
-  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:90; }
-  .global-msg{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:100; padding:24px; border-radius:12px; display:none; min-width:280px; max-width:760px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
-  .proof-img{ width:100%; height:auto; border-radius:8px; object-fit:cover; }
-  .icon-btn{ display:inline-flex; align-items:center; justify-content:center; padding:.5rem; border-radius:999px; }
+  body { transition: background-color 0.3s; }
+  .progress-bar { transition: width 0.5s ease-in-out; }
+  .notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
+  @keyframes slideIn { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  .global-message { position: fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; padding:20px; text-align:center; z-index:1000; display:none; max-width:90%; box-shadow:0 0 15px rgba(0,0,0,0.3);}
 </style>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen" id="body">
 
-<!-- Notification -->
-<div id="notification" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-110">
-  <div class="bg-blue-600 text-white px-4 py-2 rounded shadow"><span id="notificationText"></span></div>
-</div>
-
-<!-- Global Message (center) -->
-<div id="globalMessage" class="global-msg" role="dialog" aria-modal="true" style="background:rgba(59,130,246,0.95); color:white;">
-  <h2 class="text-2xl font-bold mb-2">Mensagem da Moderação</h2>
-  <p id="globalMessageText" class="mb-4"></p>
-  <div class="flex justify-center gap-2">
-    <button id="globalCloseBtn" class="px-4 py-2 rounded bg-white text-blue-600">Fechar</button>
+<!-- Notificação -->
+<div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
+  <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
+    <i data-feather="alert-circle" class="mr-2"></i>
+    <span id="notification-message"></span>
   </div>
 </div>
 
-<!-- Settings Modal (contains admin login + background upload) -->
-<div id="settingsModal" class="hidden modal-backdrop">
-  <div class="bg-white rounded-xl shadow-xl p-5 w-full max-w-md mx-4">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold">Configurações</h3>
-      <button onclick="closeSettings()" class="text-gray-600"><i data-feather="x"></i></button>
-    </div>
+<!-- Mensagem Global -->
+<div id="globalMessage" class="global-message">
+  <h2 class="text-xl font-bold mb-2">Mensagem da Moderação</h2>
+  <p id="globalText" class="mb-4"></p>
+  <button onclick="closeGlobalMessage()" class="px-4 py-2 rounded text-white" style="background-color:var(--button-color)">Fechar</button>
+</div>
 
-    <div class="space-y-4">
+<!-- Modal Configurações -->
+<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
+      <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+    <div class="space-y-6">
+      <!-- Membros -->
       <div>
-        <label class="block text-sm font-medium mb-1">Fundo do aplicativo</label>
-        <input type="file" id="bgUpload" accept="image/*" class="w-full" />
-        <p class="text-xs text-gray-500 mt-1">Qualquer usuário pode definir um fundo (salvo para todos).</p>
+        <h4 class="font-semibold mb-2">Configurações de Membro</h4>
+        <input type="text" id="memberName" placeholder="Digite seu nome" class="w-full border rounded p-2 mb-2">
+        <label class="block mb-2">Cor do site: <input type="color" id="memberSiteColor" value="#3B82F6"></label>
+        <label class="block mb-2">Cor das barras: <input type="color" id="memberBarColor" value="#3B82F6"></label>
+        <label class="block mb-2">Foto de fundo: <input type="file" id="memberBackground"></label>
       </div>
-
-      <div class="pt-2 border-t">
-        <h4 class="font-medium mb-2">Login do Administrador</h4>
-        <input id="adminUserInput" placeholder="Usuário" class="w-full border rounded p-2 mb-2" />
-        <input id="adminPassInput" placeholder="Senha" type="password" class="w-full border rounded p-2 mb-2" />
-        <button id="adminLoginBtn" class="w-full btn-primary py-2 rounded">Entrar como Administrador</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Admin Modal (only for logged admins) -->
-<div id="adminModal" class="hidden modal-backdrop">
-  <div class="bg-white rounded-xl shadow-xl p-5 w-full max-w-3xl mx-4 overflow-auto max-h-[85vh]">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold">Painel de Administração</h3>
-      <div class="flex items-center gap-2">
-        <button id="logoutBtn" class="text-red-500 text-sm">Sair</button>
-        <button onclick="closeAdmin()" class="text-gray-600"><i data-feather="x"></i></button>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Left: credentials + global message -->
-      <div class="space-y-4">
-        <div class="bg-gray-50 p-3 rounded">
-          <h4 class="font-medium mb-2">Gerar Credencial de Admin</h4>
-          <button onclick="generateAdminCredential()" class="px-3 py-2 rounded btn-primary">Gerar Credencial</button>
-          <p class="text-sm text-gray-500 mt-2">As credenciais geradas ficam listadas abaixo e salvas.</p>
-          <div id="adminCredentialsList" class="mt-3 space-y-2 max-h-36 overflow-auto"></div>
-        </div>
-
-        <div class="bg-gray-50 p-3 rounded">
-          <h4 class="font-medium mb-2">Mensagem Global</h4>
-          <textarea id="adminGlobalInput" rows="3" class="w-full border rounded p-2" placeholder="Escreva a mensagem..."></textarea>
-          <div class="flex gap-2 mt-2">
-            <button onclick="adminSendGlobal()" class="btn-primary px-3 py-2 rounded">Enviar</button>
-            <button onclick="closeGlobalMessage()" class="px-3 py-2 rounded border">Fechar mensagem</button>
-          </div>
-        </div>
-
-        <div class="bg-gray-50 p-3 rounded">
-          <h4 class="font-medium mb-2">Provas</h4>
-          <div class="flex gap-2">
-            <button onclick="openAllProofsInTab()" class="px-3 py-2 rounded btn-primary">Abrir todas as provas (nova aba)</button>
-            <button onclick="openProofsModalAll()" class="px-3 py-2 rounded border">Ver aqui (modal)</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: style controls + actions -->
-      <div class="space-y-4">
-        <div class="bg-gray-50 p-3 rounded">
-          <h4 class="font-medium mb-2">Personalizar Cores (salvas para todos)</h4>
-          <div class="flex items-center gap-3 mb-2">
-            <div>
-              <label class="text-xs block">Cor do site</label>
-              <input type="color" id="siteColor" value="#f8fafc" />
-            </div>
-            <div>
-              <label class="text-xs block">Cor dos botões</label>
-              <input type="color" id="buttonColor" value="#3B82F6" />
-            </div>
-            <div>
-              <label class="text-xs block">Cor das barras</label>
-              <input type="color" id="barColor" value="#3B82F6" />
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <button id="saveColorsBtn" class="btn-primary px-3 py-2 rounded">Salvar cores</button>
-            <button onclick="resetAll()" class="px-3 py-2 rounded bg-red-500 text-white">Resetar todas as metas</button>
-          </div>
-        </div>
-
-        <div class="bg-gray-50 p-3 rounded">
-          <h4 class="font-medium mb-2">Gerenciar Admins</h4>
-          <p class="text-sm text-gray-500">Remova credenciais que não quer mais.</p>
-          <div id="adminManageList" class="mt-2 space-y-2 max-h-36 overflow-auto"></div>
-        </div>
+      <!-- Login Admin -->
+      <div class="pt-4 border-t">
+        <h4 class="font-semibold mb-2">Login do Administrador</h4>
+        <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg mb-2">
+        <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg mb-2">
+        <button onclick="loginAdmin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Entrar como Administrador</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Proofs Modal (single or all) -->
-<div id="proofsModal" class="hidden modal-backdrop">
-  <div class="bg-white rounded-xl shadow-xl p-4 w-full max-w-4xl mx-4 overflow-auto max-h-[85vh]">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="font-semibold">Provas Enviadas</h3>
-      <button onclick="closeProofsModal()" class="text-gray-600"><i data-feather="x"></i></button>
+<!-- Modal Admin -->
+<div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h3 class="text-2xl font-bold text-gray-800">Administração</h3>
+      <button onclick="closeAdminModal()" class="text-gray-500 hover:text-gray-700">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
     </div>
-    <div id="proofsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+    <div class="space-y-4">
+      <button onclick="sendGlobalPrompt()" class="w-full py-2 rounded text-white" style="background-color:var(--button-color)">Enviar Mensagem Global</button>
+      <button onclick="viewAllProofs()" class="w-full py-2 rounded text-white" style="background-color:var(--button-color)">Ver Provas</button>
+      <!-- Outras opções podem ser adicionadas aqui -->
+    </div>
   </div>
 </div>
 
-<!-- Page header + controls -->
+<!-- Header -->
 <div class="container mx-auto px-4 py-8">
-  <header class="flex items-center justify-between mb-6">
-    <h1 id="title" class="text-3xl font-bold" style="color:var(--btn-color)">Progresso em Foco</h1>
-    <div class="flex items-center gap-2">
-      <button id="openSettings" class="icon-btn" title="Configurações"><i data-feather="settings"></i></button>
-      <button id="shieldBtn" class="icon-btn hidden" title="Área do admin (só admins)" onclick="openAdmin()"><i data-feather="shield"></i></button>
+  <header class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold" style="color:var(--site-color)">Progresso em Foco</h1>
+    <div class="flex space-x-4">
+      <button onclick="openSettingsModal()" class="p-2 rounded-full hover:bg-gray-200"><i data-feather="settings"></i></button>
+      <button id="adminBtn" class="p-2 rounded-full hover:bg-gray-200 hidden" onclick="openAdminModal()"><i data-feather="shield"></i></button>
     </div>
   </header>
 
-  <!-- Add meta -->
-  <section class="bg-white rounded-lg shadow p-4 mb-6">
-    <div class="flex flex-col md:flex-row gap-3">
-      <input id="memberName" placeholder="Seu nome (aparecerá no placar)" class="border rounded p-2 flex-1" />
-      <input id="newMetaName" placeholder="Nome da nova meta" class="border rounded p-2 flex-1" />
-      <button id="addMetaBtn" class="btn-primary px-4 py-2 rounded">Adicionar</button>
+  <!-- Form Adicionar Meta -->
+  <div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-semibold mb-4">Adicionar Nova Meta</h2>
+    <div class="flex gap-4">
+      <input id="newBarName" type="text" placeholder="Nome da Meta" class="border rounded p-2 flex-1">
+      <button id="addBarBtn" class="px-6 py-2 rounded text-white" style="background-color:var(--button-color)">Adicionar</button>
     </div>
-    <p class="text-xs text-gray-500 mt-2">Observação: cada prova aumenta 10% (máximo 100%).</p>
-  </section>
+  </div>
 
-  <!-- Leaderboard -->
-  <section class="mb-6">
-    <div class="bg-white rounded-lg shadow p-4">
-      <h2 class="font-semibold mb-3">Placar Geral</h2>
-      <div id="leaderboard" class="space-y-2"></div>
-    </div>
-  </section>
+  <!-- Placar Geral -->
+  <div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-semibold mb-4">Placar Geral</h2>
+    <div id="leaderboard" class="space-y-2"></div>
+  </div>
 
-  <!-- Bars -->
-  <section>
-    <div id="barsContainer" class="space-y-4"></div>
-  </section>
+  <!-- Barras de progresso -->
+  <div id="barsContainer" class="space-y-6"></div>
 </div>
 
 <script>
-/* ===================== DATA KEYS ===================== */
-const KEY_BARS = 'pef_bars_v2';
-const KEY_ADMINS = 'pef_admins_v2';
-const KEY_SITE_COLOR = 'pef_site_color_v2';
-const KEY_BTN_COLOR = 'pef_btn_color_v2';
-const KEY_BAR_COLOR = 'pef_bar_color_v2';
-const KEY_BG = 'pef_bg_v2';
-const KEY_MEMBER = 'pef_member_v2';
+feather.replace();
 
-/* ===================== STATE ===================== */
-let bars = JSON.parse(localStorage.getItem(KEY_BARS) || '[]');
-let admins = JSON.parse(localStorage.getItem(KEY_ADMINS) || '[]'); // array of {user,pass}
+// Variáveis
+let bars = JSON.parse(localStorage.getItem('progressBars')) || [];
+let barColor = localStorage.getItem('barColor') || '#3B82F6';
+let siteColor = localStorage.getItem('siteColor') || '#3B82F6';
+let adminCredentials = {username:'admin', password:'123456'};
 let isAdmin = false;
+let memberName = localStorage.getItem('memberName') || 'Membro';
 
-/* create default admin if none exist */
-if(!admins.length){
-  // default credential admin / 123456 (also saved so generator can list it)
-  admins.push({user:'admin', pass:'123456'});
-  localStorage.setItem(KEY_ADMINS, JSON.stringify(admins));
+// Configurações Modal
+function openSettingsModal(){document.getElementById('settingsModal').classList.remove('hidden');}
+function closeSettingsModal(){document.getElementById('settingsModal').classList.add('hidden');}
+function openAdminModal(){if(isAdmin){document.getElementById('adminModal').classList.remove('hidden');}}
+function closeAdminModal(){document.getElementById('adminModal').classList.add('hidden');}
+
+// Login Admin
+function loginAdmin(){
+  const user = document.getElementById('adminUsername').value;
+  const pass = document.getElementById('adminPassword').value;
+  if(user===adminCredentials.username && pass===adminCredentials.password){
+    alert('Login de administrador bem-sucedido!');
+    document.getElementById('adminBtn').classList.remove('hidden');
+    isAdmin=true;
+    closeSettingsModal();
+  } else alert('Usuário ou senha incorretos.');
 }
 
-/* ===================== ELEMENTS ===================== */
-const notification = document.getElementById('notification');
-const notificationText = document.getElementById('notificationText');
-
-const openSettingsBtn = document.getElementById('openSettings');
-const settingsModal = document.getElementById('settingsModal');
-const adminModal = document.getElementById('adminModal');
-const proofsModal = document.getElementById('proofsModal');
-
-const openSettingsInputBg = document.getElementById('bgUpload');
-const adminLoginBtn = document.getElementById('adminLoginBtn');
-const adminUserInput = document.getElementById('adminUserInput');
-const adminPassInput = document.getElementById('adminPassInput');
-
-const shieldBtn = document.getElementById('shieldBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-
-const addMetaBtn = document.getElementById('addMetaBtn');
-const newMetaName = document.getElementById('newMetaName');
-const memberName = document.getElementById('memberName');
-const barsContainer = document.getElementById('barsContainer');
-const leaderboard = document.getElementById('leaderboard');
-
-const globalMessage = document.getElementById('globalMessage');
-const globalMessageText = document.getElementById('globalMessageText');
-const globalCloseBtn = document.getElementById('globalCloseBtn');
-
-const adminCredentialsList = document.getElementById('adminCredentialsList');
-const adminManageList = document.getElementById('adminManageList');
-
-const siteColor = document.getElementById('siteColor');
-const buttonColor = document.getElementById('buttonColor');
-const barColor = document.getElementById('barColor');
-const saveColorsBtn = document.getElementById('saveColorsBtn');
-
-const adminGlobalInput = document.getElementById('adminGlobalInput');
-
-/* ===================== UTIL ===================== */
-function showNotification(msg, t=1600){
-  notificationText.innerText = msg;
-  notification.classList.remove('hidden');
-  setTimeout(()=> notification.classList.add('hidden'), t);
-}
-function persistBars(){ localStorage.setItem(KEY_BARS, JSON.stringify(bars)); }
-function persistAdmins(){ localStorage.setItem(KEY_ADMINS, JSON.stringify(admins)); }
-
-/* escape */
-function esc(s){ return String(s||'').replace(/[&<>"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-/* ===================== STYLES LOAD ===================== */
-function applySavedStyle(){
-  const sc = localStorage.getItem(KEY_SITE_COLOR);
-  const bc = localStorage.getItem(KEY_BTN_COLOR);
-  const barc = localStorage.getItem(KEY_BAR_COLOR);
-  const bg = localStorage.getItem(KEY_BG);
-  if(sc){ document.body.style.backgroundColor = sc; siteColor.value = sc; document.documentElement.style.setProperty('--site-bg', sc); }
-  if(bc){ updateButtonsColor(bc); buttonColor.value = bc; localStorage.setItem(KEY_BTN_COLOR, bc); }
-  if(barc){ window.__BAR_COLOR = barc; barColor.value = barc; localStorage.setItem(KEY_BAR_COLOR, barc); }
-  if(bg){ document.body.style.backgroundImage = `url(${bg})`; }
-}
-applySavedStyle();
-
-/* update button color function */
-function updateButtonsColor(hex){
-  // apply to elements that use .btn-primary
-  document.querySelectorAll('.btn-primary').forEach(b=>{
-    b.style.background = hex; b.style.color = '#fff';
-  });
-  document.documentElement.style.setProperty('--btn-color', hex);
-}
-
-/* ===================== ADMIN MANAGEMENT ===================== */
-
-/* generate random credential */
-function generateAdminCredential(){
-  const username = `admin_${Math.random().toString(36).slice(2,8)}`;
-  const pass = Math.random().toString(36).slice(2,10);
-  admins.push({user:username, pass});
-  persistAdmins();
-  renderAdminLists();
-  showNotification('Credencial criada');
-  return {username, pass};
-}
-
-/* render admin lists (in admin modal) */
-function renderAdminLists(){
-  adminCredentialsList.innerHTML = '';
-  adminManageList.innerHTML = '';
-  admins.forEach((a, idx)=>{
-    // show credentials stacked
-    const row = document.createElement('div');
-    row.className = 'p-2 bg-white rounded shadow-sm flex items-center justify-between';
-    row.innerHTML = `<div class="text-sm font-mono">${esc(a.user)} / ${esc(a.pass)}</div>
-      <div class="flex gap-2">
-        <button onclick="copyAdmin(${idx})" class="px-2 py-1 text-xs border rounded">Copiar</button>
-        <button onclick="removeAdmin(${idx})" class="px-2 py-1 text-xs text-red-500 border rounded">Remover</button>
-      </div>`;
-    adminCredentialsList.appendChild(row);
-
-    // manage list with remove option as well
-    const mrow = document.createElement('div');
-    mrow.className = 'flex items-center justify-between bg-white p-2 rounded';
-    mrow.innerHTML = `<div class="text-sm">${esc(a.user)}</div><button onclick="removeAdmin(${idx})" class="text-xs text-red-500">Remover</button>`;
-    adminManageList.appendChild(mrow);
-  });
-}
-function copyAdmin(i){
-  const a = admins[i];
-  navigator.clipboard?.writeText(`${a.user}:${a.pass}`).then(()=> showNotification('Copiado para a área de transferência'));
-}
-function removeAdmin(i){
-  if(!confirm('Remover credencial de admin?')) return;
-  admins.splice(i,1);
-  persistAdmins();
-  renderAdminLists();
-  showNotification('Credencial removida');
-}
-
-/* ===================== LOGIN FLOW ===================== */
-adminLoginBtn.addEventListener('click', ()=>{
-  const u = adminUserInput.value.trim();
-  const p = adminPassInput.value;
-  if(!u || !p){ alert('Preencha usuário e senha'); return; }
-  // check against stored admins
-  const ok = admins.some(a => a.user === u && a.pass === p);
-  if(ok){
-    isAdmin = true;
-    shieldBtn.classList.remove('hidden');
-    closeSettings();
-    renderAdminLists();
-    showNotification('Logado como administrador', 1200);
-    adminUserInput.value = ''; adminPassInput.value = '';
-  } else {
-    alert('Usuário ou senha incorretos.');
+// Alterações de cores e fundo
+document.getElementById('memberSiteColor').addEventListener('input', e => {
+  document.body.style.backgroundColor = e.target.value;
+  localStorage.setItem('siteColor', e.target.value);
+});
+document.getElementById('memberBarColor').addEventListener('input', e => {
+  barColor = e.target.value;
+  localStorage.setItem('barColor', barColor);
+  renderBars();
+});
+document.getElementById('memberBackground').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = function(event){
+      document.body.style.backgroundImage = `url(${event.target.result})`;
+      document.body.style.backgroundSize='cover';
+    };
+    reader.readAsDataURL(file);
   }
 });
-logoutBtn.addEventListener('click', ()=>{
-  isAdmin = false; shieldBtn.classList.add('hidden'); closeAdmin(); showNotification('Logout efetuado',1200);
+document.getElementById('memberName').addEventListener('input', e=>{
+  memberName=e.target.value || 'Membro';
+  localStorage.setItem('memberName', memberName);
 });
 
-/* ===================== OPEN/CLOSE MODALS ===================== */
-openSettingsBtn.addEventListener('click', ()=> settingsModal.classList.remove('hidden') );
-function closeSettings(){ settingsModal.classList.add('hidden'); }
-function openAdmin(){ if(!isAdmin){ alert('Acesso negado — faça login como admin nas configurações.'); return; } adminModal.classList.remove('hidden'); renderAdminLists(); }
-function closeAdmin(){ adminModal.classList.add('hidden'); }
-
-/* ===================== STYLE SAVE ===================== */
-saveColorsBtn.addEventListener('click', ()=>{
-  const sc = siteColor.value; const bc = buttonColor.value; const barc = barColor.value;
-  localStorage.setItem(KEY_SITE_COLOR, sc);
-  localStorage.setItem(KEY_BTN_COLOR, bc);
-  localStorage.setItem(KEY_BAR_COLOR, barc);
-  document.body.style.backgroundColor = sc;
-  updateButtonsColor(bc);
-  window.__BAR_COLOR = barc;
-  renderBars(); updateLeaderboard();
-  showNotification('Cores aplicadas a todos',1500);
+// Adicionar barra
+document.getElementById('addBarBtn').addEventListener('click',()=>{
+  const name = document.getElementById('newBarName').value.trim();
+  if(!name) return alert('Digite o nome da meta');
+  bars.push({name,progress:0,proofs:[],member:memberName});
+  localStorage.setItem('progressBars',JSON.stringify(bars));
+  document.getElementById('newBarName').value='';
+  renderBars();
+  updateLeaderboard();
 });
 
-/* background upload for all */
-if(openSettingsInputBg){
-  openSettingsInputBg.addEventListener('change',(e)=>{
-    const f = e.target.files?.[0];
-    if(!f) return;
-    const r = new FileReader();
-    r.onload = ev=>{
-      const data = ev.target.result;
-      document.body.style.backgroundImage = `url(${data})`;
-      localStorage.setItem(KEY_BG, data);
-      showNotification('Fundo atualizado para todos', 1500);
-    };
-    r.readAsDataURL(f);
-  });
-}
-
-/* ===================== BARS UI ===================== */
-addMetaBtn.addEventListener('click', ()=>{
-  const name = newMetaName.value.trim();
-  const member = (memberName.value || '').trim() || 'Membro';
-  if(!name){ alert('Digite o nome da meta'); return; }
-  bars.push({ name, progress:0, proofs:[], member });
-  persistBars();
-  newMetaName.value = '';
-  renderBars(); updateLeaderboard();
-});
-
-/* render bars */
+// Renderizar barras
 function renderBars(){
-  barsContainer.innerHTML = '';
-  const currentBarColor = localStorage.getItem(KEY_BAR_COLOR) || window.__BAR_COLOR || '#3B82F6';
-  bars.forEach((b, idx)=>{
-    const wrapper = document.createElement('div');
-    wrapper.className = 'bg-white rounded-lg shadow p-4';
-    wrapper.innerHTML = `
-      <div class="flex justify-between items-start mb-3">
+  const container=document.getElementById('barsContainer');
+  container.innerHTML='';
+  bars.forEach((bar,i)=>{
+    const div=document.createElement('div');
+    div.className='bg-white rounded-lg shadow p-6';
+    div.innerHTML=`
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">${bar.name}</h3>
         <div>
-          <div class="flex items-center gap-2">
-            <h3 class="text-lg font-semibold">${esc(b.name)}</h3>
-            <span class="text-sm text-gray-500">(${esc(b.member)})</span>
-          </div>
-          <div class="text-xs text-gray-400 mt-1">Provas: ${(b.proofs||[]).length}</div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button title="Editar nome" onclick="editBar(${idx})" class="p-1 text-gray-500"><i data-feather="edit-2"></i></button>
-          <button title="Excluir" onclick="deleteBar(${idx})" class="p-1 text-red-500"><i data-feather="trash-2"></i></button>
+          <button onclick="editBarName(${i})" class="p-1 text-gray-500 hover:text-blue-500" title="Editar"><i data-feather="edit-2"></i></button>
+          <button onclick="deleteBar(${i})" class="p-1 text-gray-500 hover:text-red-500" title="Excluir"><i data-feather="trash-2"></i></button>
         </div>
       </div>
-
-      <div class="flex items-center gap-3">
+      <div class="flex items-center space-x-4 mb-4">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
-          <div class="progress-bar h-full" style="width:${b.progress}% ; background:${currentBarColor};"></div>
+          <div class="progress-bar h-full rounded-full" style="width:${bar.progress}%;background-color:${barColor}"></div>
         </div>
-        <div class="w-12 text-right text-sm font-medium">${b.progress}%</div>
+        <span>${bar.progress}%</span>
       </div>
-
-      <div class="mt-3 flex gap-2">
-        <label class="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded" style="background:var(--btn-color); color:#fff;">
-          <i data-feather="camera"></i>
-          <span class="text-sm">Enviar Prova</span>
-          <input type="file" accept="image/*" style="display:none" onchange="uploadProof(${idx}, this.files[0])" />
-        </label>
-        <button onclick="openProofsFor(${idx})" class="px-3 py-2 rounded border">Ver provas</button>
-      </div>
+      <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
+        <i data-feather="camera"></i> Enviar Comprovação
+        <input type="file" onchange="uploadProof(${i},this.files[0])" class="hidden">
+      </label>
     `;
-    barsContainer.appendChild(wrapper);
+    container.appendChild(div);
   });
   feather.replace();
 }
 
-/* edit */
-function editBar(i){
-  const newName = prompt('Editar nome da meta', bars[i].name);
-  if(newName && newName.trim()){
-    bars[i].name = newName.trim(); persistBars(); renderBars(); updateLeaderboard();
-  }
-}
+// Editar e excluir barras
+function editBarName(i){ const newName=prompt('Novo nome:',bars[i].name); if(newName){bars[i].name=newName; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars();}}
+function deleteBar(i){bars.splice(i,1); localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); updateLeaderboard();}
 
-/* delete */
-function deleteBar(i){
-  if(!confirm(`Excluir a meta "${bars[i].name}"? Esta ação não pode ser desfeita.`)) return;
-  bars.splice(i,1); persistBars(); renderBars(); updateLeaderboard();
-}
-
-/* upload proof */
-function uploadProof(i, file){
+// Upload prova
+function uploadProof(i,file){
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    bars[i].proofs = bars[i].proofs || [];
-    bars[i].proofs.push({ date: new Date().toISOString(), image: e.target.result });
-    bars[i].progress = Math.min(100, (bars[i].progress || 0) + 10);
-    persistBars(); renderBars(); updateLeaderboard();
-    showNotification('Prova enviada e progresso atualizado', 1400);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    bars[i].proofs.push({date:new Date().toISOString(),image:e.target.result});
+    bars[i].progress=Math.min(bars[i].progress+10,100);
+    localStorage.setItem('progressBars',JSON.stringify(bars));
+    renderBars();
+    updateLeaderboard();
   };
   reader.readAsDataURL(file);
 }
 
-/* open proofs for single bar (modal) */
-function openProofsFor(i){
-  const grid = document.getElementById('proofsGrid');
-  grid.innerHTML = '';
-  const bar = bars[i];
-  if(!bar || !(bar.proofs||[]).length){
-    grid.innerHTML = '<div class="p-3">Nenhuma prova nesta meta.</div>';
-  } else {
-    (bar.proofs||[]).forEach(p=>{
-      const el = document.createElement('div');
-      el.className = 'bg-white p-2 rounded shadow';
-      el.innerHTML = `<div class="text-xs text-gray-600 mb-1">${esc(bar.member)} — ${esc(bar.name)}</div><img src="${p.image}" class="proof-img" />`;
-      grid.appendChild(el);
-    });
-  }
-  proofsModal.classList.remove('hidden');
-}
-
-/* open all proofs (modal) */
-function openProofsModalAll(){
-  const grid = document.getElementById('proofsGrid');
-  grid.innerHTML = '';
-  let any = false;
-  bars.forEach(b=>{
-    (b.proofs||[]).forEach(p=>{
-      any = true;
-      const el = document.createElement('div');
-      el.className = 'bg-white p-2 rounded shadow';
-      el.innerHTML = `<div class="text-xs text-gray-600 mb-1">${esc(b.member)} — ${esc(b.name)}</div><img src="${p.image}" class="proof-img" />`;
-      grid.appendChild(el);
-    });
-  });
-  if(!any) grid.innerHTML = '<div class="p-3">Nenhuma prova enviada ainda.</div>';
-  proofsModal.classList.remove('hidden');
-}
-function closeProofsModal(){ proofsModal.classList.add('hidden'); }
-
-/* open all proofs in new tab (admin request) */
-function openAllProofsInTab(){
-  // build simple HTML
-  let html = `<!doctype html><html><head><meta charset="utf-8"><title>Provas — Progresso em Foco</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;padding:16px;background:#f3f4f6} .img{max-width:100%;height:auto;border-radius:8px;margin-bottom:8px} .card{background:#fff;padding:12px;border-radius:8px;margin-bottom:12px;box-shadow:0 4px 14px rgba(0,0,0,.08)}</style></head><body>
-  <button onclick="window.close()" style="padding:8px 12px;border-radius:8px;background:#ef4444;color:#fff;border:none;margin-bottom:12px">Fechar (X)</button>
-  <h2>Provas Enviadas</h2>`;
-  let any=false;
-  bars.forEach(b=>{
-    (b.proofs||[]).forEach(p=>{
-      any=true;
-      html += `<div class="card"><div style="font-size:13px;color:#374151;margin-bottom:6px">${escapeHtml(b.member)} — ${escapeHtml(b.name)}</div><img class="img" src="${p.image}" /></div>`;
-    });
-  });
-  if(!any) html += '<p>Nenhuma prova enviada.</p>';
-  html += '</body></html>';
-  const win = window.open();
-  win.document.write(html);
-  win.document.close();
-}
-
-/* ===================== LEADERBOARD ===================== */
+// Leaderboard
 function updateLeaderboard(){
-  leaderboard.innerHTML = '';
-  const sorted = [...bars].sort((a,b)=> (b.progress||0) - (a.progress||0));
-  sorted.forEach(it=>{
-    const div = document.createElement('div');
-    div.className = 'flex justify-between bg-gray-100 p-2 rounded';
-    div.innerHTML = `<span>${esc(it.member||'Membro')} - ${esc(it.name)}</span><span>${it.progress||0}%</span>`;
-    leaderboard.appendChild(div);
+  const lb=document.getElementById('leaderboard');
+  lb.innerHTML='';
+  const sorted=[...bars].sort((a,b)=>b.progress-b.progress);
+  sorted.forEach(bar=>{
+    const div=document.createElement('div');
+    div.className='flex justify-between bg-gray-100 p-2 rounded';
+    div.innerHTML=`<span>${bar.member} - ${bar.name}</span><span>${bar.progress}%</span>`;
+    lb.appendChild(div);
   });
 }
 
-/* ===================== GLOBAL MESSAGE ===================== */
-globalCloseBtn.addEventListener('click', ()=> globalMessage.style.display = 'none');
-
-function adminSendGlobal(){
-  const txt = (adminGlobalInput.value || '').trim();
-  if(!txt){ alert('Digite uma mensagem'); return; }
-  globalMessageText.innerText = txt;
-  globalMessage.style.display = 'block';
-  adminGlobalInput.value = '';
-  // optionally save last global if desired
-  localStorage.setItem('pef_last_global', txt);
-}
-function closeGlobalMessage(){ globalMessage.style.display = 'none'; }
-
-/* also expose sendGlobalMessage for other calls */
-function sendGlobalMessage(msg){
+// Mensagem global
+function sendGlobalPrompt(){
+  const msg=prompt('Digite a mensagem global:');
   if(!msg) return;
-  globalMessageText.innerText = msg;
-  globalMessage.style.display = 'block';
+  document.getElementById('globalText').innerText=msg;
+  document.getElementById('globalMessage').style.display='block';
 }
+function closeGlobalMessage(){document.getElementById('globalMessage').style.display='none';}
 
-/* ===================== RESET ===================== */
-function resetAll(){
-  if(!confirm('Resetar todas as metas (removerá tudo)?')) return;
-  bars = [];
-  persistBars();
-  renderBars(); updateLeaderboard();
-  showNotification('Todas as metas foram resetadas',1400);
-}
+// Admin provas (simples)
+function viewAllProofs(){alert('Aqui você veria todas as provas em outra aba/modal');}
 
-/* ===================== INIT ===================== */
-function init(){
-  // render admin lists if modal present
-  renderAdminLists();
-
-  // load bars
+// Inicialização
+document.addEventListener('DOMContentLoaded',()=>{
   renderBars();
   updateLeaderboard();
-
-  // load saved member name
-  const savedMember = localStorage.getItem(KEY_MEMBER);
-  if(savedMember) memberName.value = savedMember;
-  memberName.addEventListener('change', ()=> localStorage.setItem(KEY_MEMBER, memberName.value.trim()));
-
-  // load stored colors into pickers
-  const sc = localStorage.getItem(KEY_SITE_COLOR); if(sc) siteColor.value = sc;
-  const bc = localStorage.getItem(KEY_BTN_COLOR); if(bc) buttonColor.value = bc;
-  const barc = localStorage.getItem(KEY_BAR_COLOR); if(barc) barColor.value = barc;
-}
-init();
-
-/* helper - render admin lists (public function used above) */
-function renderAdminLists(){
-  adminCredentialsList.innerHTML = '';
-  adminManageList.innerHTML = '';
-  admins.forEach((a, idx)=>{
-    const row = document.createElement('div');
-    row.className = 'p-2 bg-white rounded shadow-sm flex items-center justify-between';
-    row.innerHTML = `<div class="text-sm font-mono">${esc(a.user)} / ${esc(a.pass)}</div>
-      <div class="flex gap-2">
-        <button onclick="copyAdmin(${idx})" class="px-2 py-1 text-xs border rounded">Copiar</button>
-        <button onclick="removeAdmin(${idx})" class="px-2 py-1 text-xs text-red-500 border rounded">Remover</button>
-      </div>`;
-    adminCredentialsList.appendChild(row);
-
-    const mrow = document.createElement('div');
-    mrow.className = 'flex items-center justify-between bg-white p-2 rounded';
-    mrow.innerHTML = `<div class="text-sm">${esc(a.user)}</div><button onclick="removeAdmin(${idx})" class="text-xs text-red-500">Remover</button>`;
-    adminManageList.appendChild(mrow);
-  });
-}
-
-/* copy/remove admin functions (exposed) */
-window.copyAdmin = copyAdmin;
-window.removeAdmin = removeAdmin;
-
-/* safety close modals on ESC */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape'){
-    settingsModal.classList.add('hidden');
-    adminModal.classList.add('hidden');
-    proofsModal.classList.add('hidden');
-    globalMessage.style.display = 'none';
-  }
+  document.body.style.backgroundColor = localStorage.getItem('siteColor') || '#3B82F6';
 });
-
-/* finally, expose a few helpers for console testing */
-window.generateAdminCredential = generateAdminCredential;
-window.openAllProofsInTab = openAllProofsInTab;
-window.openProofsModalAll = openProofsModalAll;
-
-/* end of script */
 </script>
 </body>
-</html>
+    </html>
