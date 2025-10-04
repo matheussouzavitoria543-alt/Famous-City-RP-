@@ -8,20 +8,27 @@
 <script src="https://unpkg.com/feather-icons"></script>
 <style>
 .progress-bar { transition: width 0.5s ease-in-out; }
-.notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
-@keyframes slideIn { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+.notification, #globalMessage { 
+  position: fixed; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  z-index: 9999; 
+  display: none; 
+  background-color: #3B82F6; 
+  color: white; 
+  padding: 16px 32px; 
+  border-radius: 12px; 
+  font-weight: bold; 
+  text-align: center; 
+}
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
 <!-- Notificação -->
-<div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
-  <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-    <i data-feather="alert-circle" class="mr-2"></i>
-    <span id="notification-message"></span>
-  </div>
-</div>
+<div id="notification" class="notification"></div>
+<div id="globalMessage"></div>
 
 <!-- Modal Configurações -->
 <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -55,14 +62,26 @@
       <!-- Login Admin -->
       <div class="pt-4 border-t">
         <h4 class="font-semibold mb-2">Login do Administrador</h4>
-        <div class="mb-3">
-          <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="mb-3">
-          <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-        </div>
+        <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg mb-3 focus:ring-2 focus:ring-blue-500">
+        <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg mb-3 focus:ring-2 focus:ring-blue-500">
         <button onclick="loginAdmin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Entrar como Administrador</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Administração -->
+<div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h3 class="text-2xl font-bold text-gray-800">Administração</h3>
+      <button onclick="closeAdminModal()" class="text-gray-500 hover:text-gray-700">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+    <div id="adminOptions" class="space-y-4">
+      <button onclick="showGlobalMessagePrompt()" class="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600">Enviar Mensagem Global</button>
+      <!-- Outras opções de administração podem ser adicionadas aqui -->
     </div>
   </div>
 </div>
@@ -89,16 +108,13 @@
   <!-- Placar Geral -->
   <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Placar Geral</h2>
-    <div id="leaderboard" class="space-y-2">
-      <!-- Ranking será preenchido dinamicamente -->
-    </div>
+    <div id="leaderboard" class="space-y-2"></div>
   </div>
 
   <!-- Barras de progresso -->
   <div id="barsContainer" class="space-y-6"></div>
 </div>
 
-<!-- Script -->
 <script>
 feather.replace();
 
@@ -109,9 +125,11 @@ let themeColor = localStorage.getItem('themeColor') || 'primary';
 let adminCredentials = {username:'admin', password:'123456'};
 let isAdmin = false;
 
-// Modal Configurações
+// Modais
 function openSettingsModal(){document.getElementById('settingsModal').classList.remove('hidden');}
 function closeSettingsModal(){document.getElementById('settingsModal').classList.add('hidden');}
+function openAdminModal(){ if(isAdmin){ document.getElementById('adminModal').classList.remove('hidden'); } }
+function closeAdminModal(){document.getElementById('adminModal').classList.add('hidden');}
 
 // Login Admin
 function loginAdmin(){
@@ -122,20 +140,20 @@ function loginAdmin(){
     document.getElementById('adminBtn').classList.remove('hidden');
     isAdmin = true;
     closeSettingsModal();
-  }else{
+  } else {
     alert('Usuário ou senha incorretos.');
   }
 }
 
 // Mudança de cores
 function changeThemeColor(color,hex){themeColor=color;document.documentElement.style.setProperty('--color-primary',hex);}
-function changeBarColor(hex){barColor=hex;document.documentElement.style.setProperty('--color-bar',hex);renderBars();}
+function changeBarColor(hex){barColor=hex;renderBars();}
 
 // Adicionar nova meta
 document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name = document.getElementById('newBarName').value.trim();
-  if(!name){alert('Digite o nome da meta');return;}
-  bars.push({name:name,progress:0,proofs:[],member:null});
+  if(!name){alert('Digite o nome da meta'); return;}
+  bars.push({name:name, progress:0, proofs:[], member:null});
   localStorage.setItem('progressBars',JSON.stringify(bars));
   document.getElementById('newBarName').value='';
   renderBars();
@@ -147,12 +165,12 @@ function renderBars(){
   const container = document.getElementById('barsContainer');
   container.innerHTML='';
   bars.forEach((bar,i)=>{
-    const barEl=document.createElement('div');
+    const barEl = document.createElement('div');
     barEl.className='bg-white rounded-lg shadow p-6';
     barEl.innerHTML=`
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">${bar.name}</h3>
-        <button onclick="editBarName(${i})" class="p-1 text-gray-500 hover:text-blue-500" title="Editar nome"><i data-feather="edit-2"></i></button>
+        <button onclick="editBarName(${i})" class="p-1 text-gray-500 hover:text-blue-500"><i data-feather="edit-2"></i></button>
       </div>
       <div class="flex items-center space-x-4">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
@@ -162,8 +180,7 @@ function renderBars(){
       </div>
       <div class="mt-4">
         <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
-          <i data-feather="camera"></i>
-          <span>Enviar Comprovação</span>
+          <i data-feather="camera"></i>Enviar Comprovação
           <input type="file" onchange="handleFileUpload(${i},this.files[0])" class="hidden">
         </label>
       </div>
@@ -175,18 +192,18 @@ function renderBars(){
 
 // Editar nome da meta
 function editBarName(index){
-  const newName = prompt('Digite o novo nome da meta',bars[index].name);
-  if(newName){bars[index].name=newName;localStorage.setItem('progressBars',JSON.stringify(bars));renderBars();}
+  const newName = prompt('Digite o novo nome da meta', bars[index].name);
+  if(newName){ bars[index].name=newName; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); }
 }
 
 // Upload de prova
-function handleFileUpload(index,file){
+function handleFileUpload(index, file){
   if(!file) return;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    bars[index].proofs.push({date:new Date().toISOString(),image:e.target.result});
-    bars[index].progress=Math.min(bars[index].progress+10,100);
-    localStorage.setItem('progressBars',JSON.stringify(bars));
+  const reader = new FileReader();
+  reader.onload = function(e){
+    bars[index].proofs.push({date:new Date().toISOString(), image:e.target.result});
+    bars[index].progress = Math.min(bars[index].progress + 10, 100);
+    localStorage.setItem('progressBars', JSON.stringify(bars));
     renderBars();
     updateLeaderboard();
   };
@@ -195,15 +212,27 @@ function handleFileUpload(index,file){
 
 // Placar geral
 function updateLeaderboard(){
-  const lb=document.getElementById('leaderboard');
+  const lb = document.getElementById('leaderboard');
   lb.innerHTML='';
-  const sorted=[...bars].sort((a,b)=>b.progress-a.progress);
+  const sorted = [...bars].sort((a,b)=>b.progress-a.progress);
   sorted.forEach(b=>{
-    const div=document.createElement('div');
+    const div = document.createElement('div');
     div.className='flex justify-between bg-gray-100 p-2 rounded';
     div.innerHTML=`<span>${b.member||'Membro'} - ${b.name}</span><span>${b.progress}%</span>`;
     lb.appendChild(div);
   });
+}
+
+// Mensagem global
+function showGlobalMessage(msg){
+  const el = document.getElementById('globalMessage');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>{ el.style.display='none'; },3000);
+}
+function showGlobalMessagePrompt(){
+  const msg = prompt('Digite a mensagem global:');
+  if(msg){ showGlobalMessage(msg); }
 }
 
 // Inicialização
