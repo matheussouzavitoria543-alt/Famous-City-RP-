@@ -7,28 +7,18 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/feather-icons"></script>
 <style>
-.progress-bar { transition: width 0.5s ease-in-out; }
-.notification, #globalMessage { 
-  position: fixed; 
-  top: 50%; 
-  left: 50%; 
-  transform: translate(-50%, -50%); 
-  z-index: 9999; 
-  display: none; 
-  background-color: #3B82F6; 
-  color: white; 
-  padding: 16px 32px; 
-  border-radius: 12px; 
-  font-weight: bold; 
-  text-align: center; 
-}
+  .progress-bar { transition: width 0.5s ease-in-out; }
+  .notification, .global-message { 
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 50; display: none; padding: 1rem 2rem; border-radius: 0.5rem;
+    background-color: #3B82F6; color: white; font-weight: bold;
+  }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- Notificação -->
-<div id="notification" class="notification"></div>
-<div id="globalMessage"></div>
+<!-- Mensagem Global -->
+<div id="globalMessage" class="global-message"></div>
 
 <!-- Modal Configurações -->
 <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -62,8 +52,12 @@
       <!-- Login Admin -->
       <div class="pt-4 border-t">
         <h4 class="font-semibold mb-2">Login do Administrador</h4>
-        <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg mb-3 focus:ring-2 focus:ring-blue-500">
-        <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg mb-3 focus:ring-2 focus:ring-blue-500">
+        <div class="mb-3">
+          <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="mb-3">
+          <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
         <button onclick="loginAdmin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Entrar como Administrador</button>
       </div>
     </div>
@@ -74,14 +68,15 @@
 <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
   <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-lg">
     <div class="flex justify-between items-center mb-6 border-b pb-4">
-      <h3 class="text-2xl font-bold text-gray-800">Administração</h3>
+      <h3 class="text-2xl font-bold text-gray-800">Área do Administrador</h3>
       <button onclick="closeAdminModal()" class="text-gray-500 hover:text-gray-700">
         <i data-feather="x" class="w-6 h-6"></i>
       </button>
     </div>
-    <div id="adminOptions" class="space-y-4">
-      <button onclick="showGlobalMessagePrompt()" class="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600">Enviar Mensagem Global</button>
-      <!-- Outras opções de administração podem ser adicionadas aqui -->
+    <div class="space-y-4">
+      <button onclick="showGlobalMessagePrompt()" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Enviar Mensagem Global</button>
+      <button onclick="resetProgress()" class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600">Resetar Todas as Barras</button>
+      <button onclick="viewReports()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Visualizar Relatórios</button>
     </div>
   </div>
 </div>
@@ -118,17 +113,18 @@
 <script>
 feather.replace();
 
-// Variáveis globais
 let bars = JSON.parse(localStorage.getItem('progressBars')) || [];
 let barColor = localStorage.getItem('barColor') || '#3B82F6';
 let themeColor = localStorage.getItem('themeColor') || 'primary';
 let adminCredentials = {username:'admin', password:'123456'};
 let isAdmin = false;
 
-// Modais
+// Modal Configurações
 function openSettingsModal(){document.getElementById('settingsModal').classList.remove('hidden');}
 function closeSettingsModal(){document.getElementById('settingsModal').classList.add('hidden');}
-function openAdminModal(){ if(isAdmin){ document.getElementById('adminModal').classList.remove('hidden'); } }
+
+// Modal Admin
+function openAdminModal(){if(isAdmin){document.getElementById('adminModal').classList.remove('hidden');}else{alert('Acesso negado. Faça login como administrador.');}}
 function closeAdminModal(){document.getElementById('adminModal').classList.add('hidden');}
 
 // Login Admin
@@ -140,27 +136,24 @@ function loginAdmin(){
     document.getElementById('adminBtn').classList.remove('hidden');
     isAdmin = true;
     closeSettingsModal();
-  } else {
-    alert('Usuário ou senha incorretos.');
-  }
+  } else alert('Usuário ou senha incorretos.');
 }
 
-// Mudança de cores
+// Cores
 function changeThemeColor(color,hex){themeColor=color;document.documentElement.style.setProperty('--color-primary',hex);}
 function changeBarColor(hex){barColor=hex;renderBars();}
 
-// Adicionar nova meta
+// Adicionar meta
 document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name = document.getElementById('newBarName').value.trim();
   if(!name){alert('Digite o nome da meta'); return;}
   bars.push({name:name, progress:0, proofs:[], member:null});
   localStorage.setItem('progressBars',JSON.stringify(bars));
   document.getElementById('newBarName').value='';
-  renderBars();
-  updateLeaderboard();
+  renderBars(); updateLeaderboard();
 });
 
-// Renderização das barras
+// Renderizar barras
 function renderBars(){
   const container = document.getElementById('barsContainer');
   container.innerHTML='';
@@ -180,7 +173,8 @@ function renderBars(){
       </div>
       <div class="mt-4">
         <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
-          <i data-feather="camera"></i>Enviar Comprovação
+          <i data-feather="camera"></i>
+          <span>Enviar Comprovação</span>
           <input type="file" onchange="handleFileUpload(${i},this.files[0])" class="hidden">
         </label>
       </div>
@@ -190,29 +184,28 @@ function renderBars(){
   feather.replace();
 }
 
-// Editar nome da meta
-function editBarName(index){
-  const newName = prompt('Digite o novo nome da meta', bars[index].name);
-  if(newName){ bars[index].name=newName; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); }
+// Editar nome
+function editBarName(i){
+  const newName = prompt('Digite o novo nome da meta', bars[i].name);
+  if(newName){bars[i].name=newName; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars();}
 }
 
-// Upload de prova
-function handleFileUpload(index, file){
+// Upload prova
+function handleFileUpload(index,file){
   if(!file) return;
   const reader = new FileReader();
   reader.onload = function(e){
     bars[index].proofs.push({date:new Date().toISOString(), image:e.target.result});
-    bars[index].progress = Math.min(bars[index].progress + 10, 100);
-    localStorage.setItem('progressBars', JSON.stringify(bars));
-    renderBars();
-    updateLeaderboard();
+    bars[index].progress = Math.min(bars[index].progress+10,100);
+    localStorage.setItem('progressBars',JSON.stringify(bars));
+    renderBars(); updateLeaderboard();
   };
   reader.readAsDataURL(file);
 }
 
 // Placar geral
 function updateLeaderboard(){
-  const lb = document.getElementById('leaderboard');
+  const lb=document.getElementById('leaderboard');
   lb.innerHTML='';
   const sorted = [...bars].sort((a,b)=>b.progress-a.progress);
   sorted.forEach(b=>{
@@ -225,21 +218,28 @@ function updateLeaderboard(){
 
 // Mensagem global
 function showGlobalMessage(msg){
-  const el = document.getElementById('globalMessage');
-  el.textContent = msg;
-  el.style.display = 'block';
-  setTimeout(()=>{ el.style.display='none'; },3000);
+  const gMsg = document.getElementById('globalMessage');
+  gMsg.textContent = msg; gMsg.style.display='block';
+  setTimeout(()=>{gMsg.style.display='none';},3000);
 }
 function showGlobalMessagePrompt(){
   const msg = prompt('Digite a mensagem global:');
-  if(msg){ showGlobalMessage(msg); }
+  if(msg) showGlobalMessage(msg);
 }
+
+// Admin opções extras
+function resetProgress(){
+  if(confirm('Deseja resetar todas as barras?')){
+    bars.forEach(b=>b.progress=0); localStorage.setItem('progressBars',JSON.stringify(bars));
+    renderBars(); updateLeaderboard();
+  }
+}
+function viewReports(){alert('Funcionalidade de relatórios em desenvolvimento.');}
 
 // Inicialização
 document.addEventListener('DOMContentLoaded',()=>{
-  renderBars();
-  updateLeaderboard();
+  renderBars(); updateLeaderboard();
 });
 </script>
 </body>
-</html>
+      </html>
