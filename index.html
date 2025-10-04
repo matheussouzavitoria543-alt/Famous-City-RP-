@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -6,25 +7,48 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/feather-icons"></script>
 <style>
+:root {
+  --color-primary: #3B82F6;
+  --color-bar: #3B82F6;
+}
 body { transition: background-color 0.3s; }
 .progress-bar { transition: width 0.5s ease-in-out; }
 .notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
 @keyframes slideIn { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-#globalMessage { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #f87171; color: white; padding: 2rem 3rem; border-radius: 1rem; z-index: 60; text-align: center; }
-#globalMessage button { margin-top: 1rem; background-color: white; color: #f87171; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: bold; }
+#globalMessage { 
+  display: none; 
+  position: fixed; 
+  top: 50%; left: 50%; 
+  transform: translate(-50%, -50%); 
+  background-color: rgba(59, 130, 246, 0.9); 
+  color: white; padding: 2rem; 
+  border-radius: 1rem; 
+  z-index: 1000; 
+  text-align: center; 
+}
+#globalMessage button { margin-top: 1rem; background-color: white; color: #3B82F6; padding: 0.5rem 1rem; border-radius: 0.5rem; }
 </style>
 </head>
-<body class="bg-gray-50 min-h-screen" id="body"><!-- Notificação --><div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Notificação -->
+<div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
   <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
     <i data-feather="alert-circle" class="mr-2"></i>
     <span id="notification-message"></span>
   </div>
-</div><!-- Mensagem Global --><div id="globalMessage">
-  <h2 class="text-2xl font-bold mb-2">Mensagem da Moderação</h2>
-  <p id="globalMessageContent" class="mb-4"></p>
+</div>
+
+<!-- Mensagem Global -->
+<div id="globalMessage">
+  <h2 class="text-xl font-bold">Mensagem da Moderação</h2>
+  <p id="globalMessageText" class="mt-2"></p>
   <button onclick="closeGlobalMessage()">Fechar</button>
-</div><!-- Modal Configurações --><div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+</div>
+
+<!-- Modal Configurações -->
+<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
   <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
     <div class="flex justify-between items-center mb-6 border-b pb-4">
       <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
@@ -37,11 +61,11 @@ body { transition: background-color 0.3s; }
       <div>
         <h4 class="font-semibold mb-2">Tema do Sistema</h4>
         <div class="flex gap-3 mb-4">
-          <button onclick="changeThemeColor('#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeThemeColor('#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeThemeColor('#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeThemeColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeThemeColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
+          <button onclick="changeThemeColor('blue','#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
+          <button onclick="changeThemeColor('green','#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
+          <button onclick="changeThemeColor('yellow','#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
+          <button onclick="changeThemeColor('red','#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
+          <button onclick="changeThemeColor('purple','#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
         </div>
         <h4 class="font-semibold mb-2">Cor das Barras</h4>
         <div class="flex gap-3">
@@ -51,6 +75,8 @@ body { transition: background-color 0.3s; }
           <button onclick="changeBarColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
           <button onclick="changeBarColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
         </div>
+        <h4 class="font-semibold mb-2 mt-4">Fundo Personalizado</h4>
+        <input type="file" onchange="setBackgroundImage(this.files[0])">
       </div>
       <!-- Login Admin -->
       <div class="pt-4 border-t">
@@ -63,101 +89,125 @@ body { transition: background-color 0.3s; }
         </div>
         <button onclick="loginAdmin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Entrar como Administrador</button>
       </div>
-      <!-- Background personalização -->
-      <div class="pt-4 border-t">
-        <h4 class="font-semibold mb-2">Plano de Fundo</h4>
-        <input type="file" accept="image/*" onchange="setBackground(event)" class="w-full">
-      </div>
     </div>
   </div>
-</div><!-- Modal Provas --><div id="proofsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl overflow-y-auto max-h-[80vh] relative">
-    <button onclick="closeProofsModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-      <i data-feather="x" class="w-6 h-6"></i>
-    </button>
-    <h3 class="text-2xl font-bold mb-4">Provas Enviadas</h3>
-    <div id="proofsContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+</div>
+
+<!-- Modal Administração -->
+<div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h3 class="text-2xl font-bold text-gray-800">Área do Administrador</h3>
+      <button onclick="closeAdminModal()" class="text-gray-500 hover:text-gray-700">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <button onclick="showAllProofs()" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Ver Provas</button>
+      <button onclick="sendGlobalMessage()" class="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600">Enviar Mensagem Global</button>
+      <input id="globalMsgInput" type="text" placeholder="Escreva sua mensagem" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+    </div>
   </div>
-</div><!-- Header --><div class="container mx-auto px-4 py-8">
+</div>
+
+<!-- Header -->
+<div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
     <div class="flex space-x-4">
       <button onclick="openSettingsModal()" class="p-2 rounded-full hover:bg-gray-200"><i data-feather="settings"></i></button>
       <button id="adminBtn" class="p-2 rounded-full hover:bg-gray-200 hidden" onclick="openAdminModal()"><i data-feather="shield"></i></button>
     </div>
-  </header>  <!-- Form Adicionar Meta -->  <div class="bg-white rounded-lg shadow p-6 mb-8">
+  </header>
+
+  <!-- Nome do Membro -->
+  <div class="mb-6">
+    <input id="memberName" type="text" placeholder="Digite seu nome" class="border rounded p-2 w-full" onchange="updateMemberName()">
+  </div>
+
+  <!-- Form Adicionar Meta -->
+  <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Adicionar Nova Meta</h2>
     <div class="flex gap-4">
-      <input id="memberName" type="text" placeholder="Seu nome" class="border rounded p-2 flex-1">
       <input id="newBarName" type="text" placeholder="Nome da Meta" class="border rounded p-2 flex-1">
       <button id="addBarBtn" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Adicionar</button>
     </div>
-  </div>  <!-- Placar Geral -->  <div class="bg-white rounded-lg shadow p-6 mb-8">
+  </div>
+
+  <!-- Placar Geral -->
+  <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Placar Geral</h2>
     <div id="leaderboard" class="space-y-2"></div>
-  </div>  <!-- Barras de progresso -->  <div id="barsContainer" class="space-y-6"></div>
-</div><!-- Script --><script>
+  </div>
+
+  <!-- Barras de progresso -->
+  <div id="barsContainer" class="space-y-6"></div>
+</div>
+
+<script>
 feather.replace();
 
 let bars = JSON.parse(localStorage.getItem('progressBars')) || [];
 let barColor = localStorage.getItem('barColor') || '#3B82F6';
-let themeColor = localStorage.getItem('themeColor') || '#3B82F6';
+let themeColor = localStorage.getItem('themeColor') || 'primary';
+let adminCredentials = {username:'admin', password:'123456'};
 let isAdmin = false;
-const adminCredentials = {username:'admin', password:'123456'};
+let memberName = '';
 
-// Configurações
 function openSettingsModal(){document.getElementById('settingsModal').classList.remove('hidden');}
 function closeSettingsModal(){document.getElementById('settingsModal').classList.add('hidden');}
 
+function openAdminModal(){if(isAdmin) document.getElementById('adminModal').classList.remove('hidden');}
+function closeAdminModal(){document.getElementById('adminModal').classList.add('hidden');}
+
+// Login Admin
 function loginAdmin(){
   const user = document.getElementById('adminUsername').value;
   const pass = document.getElementById('adminPassword').value;
   if(user===adminCredentials.username && pass===adminCredentials.password){
     alert('Login de administrador bem-sucedido!');
     document.getElementById('adminBtn').classList.remove('hidden');
-    isAdmin = true;
+    isAdmin=true;
     closeSettingsModal();
-    renderBars();
-  } else alert('Usuário ou senha incorretos.');
+  } else { alert('Usuário ou senha incorretos.'); }
 }
 
-function changeThemeColor(color){themeColor=color;document.getElementById('body').style.backgroundColor=color;}
-function changeBarColor(color){barColor=color;renderBars();}
-
-function setBackground(event){
-  const file = event.target.files[0];
+// Mudança de cores
+function changeThemeColor(color,hex){themeColor=color;document.documentElement.style.setProperty('--color-primary',hex);}
+function changeBarColor(hex){barColor=hex;document.documentElement.style.setProperty('--color-bar',hex);renderBars();}
+function setBackgroundImage(file){
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => document.getElementById('body').style.backgroundImage=`url(${e.target.result})`;
+  const reader=new FileReader();
+  reader.onload=e=>document.body.style.backgroundImage=`url(${e.target.result})`;
   reader.readAsDataURL(file);
 }
 
-// Barras
+// Nome do membro
+function updateMemberName(){memberName=document.getElementById('memberName').value; renderBars(); updateLeaderboard();}
+
+// Adicionar meta
 document.getElementById('addBarBtn').addEventListener('click',()=>{
-  const barName = document.getElementById('newBarName').value.trim();
-  const memberName = document.getElementById('memberName').value.trim();
-  if(!barName || !memberName){alert('Digite seu nome e o nome da meta'); return;}
-  bars.push({name:barName,progress:0,proofs:[],member:memberName});
+  const name = document.getElementById('newBarName').value.trim();
+  if(!name){alert('Digite o nome da meta'); return;}
+  bars.push({name:name,progress:0,proofs:[],member:memberName});
   localStorage.setItem('progressBars',JSON.stringify(bars));
   document.getElementById('newBarName').value='';
-  document.getElementById('memberName').value='';
-  renderBars();
-  updateLeaderboard();
+  renderBars(); updateLeaderboard();
 });
 
+// Renderização
 function renderBars(){
-  const container = document.getElementById('barsContainer');
+  const container=document.getElementById('barsContainer');
   container.innerHTML='';
   bars.forEach((bar,i)=>{
-    const barEl = document.createElement('div');
+    const barEl=document.createElement('div');
     barEl.className='bg-white rounded-lg shadow p-6';
     barEl.innerHTML=`
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">${bar.name} (${bar.member})</h3>
+        <h3 class="text-lg font-semibold">${bar.name}</h3>
         <div class="flex gap-2">
           <button onclick="editBarName(${i})" class="p-1 text-gray-500 hover:text-blue-500" title="Editar nome"><i data-feather="edit-2"></i></button>
-          <button onclick="deleteBar(${i})" class="p-1 text-red-500 hover:text-red-700" title="Excluir"><i data-feather="trash-2"></i></button>
-          ${isAdmin?`<button onclick="openProofsModal(${i})" class="p-1 text-gray-500 hover:text-blue-500" title="Ver provas"><i data-feather="eye"></i></button>`:''}
+          <button onclick="deleteBar(${i})" class="p-1 text-gray-500 hover:text-red-500" title="Excluir"><i data-feather="trash-2"></i></button>
         </div>
       </div>
       <div class="flex items-center space-x-4">
@@ -179,52 +229,35 @@ function renderBars(){
   feather.replace();
 }
 
-function editBarName(i){
-  const newName = prompt('Digite o novo nome da meta', bars[i].name);
-  if(newName){bars[i].name=newName; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars();}
-}
-
-function deleteBar(i){
-  if(confirm('Deseja realmente excluir esta barra?')){bars.splice(i,1); localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); updateLeaderboard();}
-}
-
-function handleFileUpload(i,file){
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    bars[i].proofs.push({date:new Date().toISOString(),image:e.target.result});
-    bars[i].progress=Math.min(bars[i].progress+10,100);
-    localStorage.setItem('progressBars',JSON.stringify(bars));
-    renderBars();
-    updateLeaderboard();
-  };
-  reader.readAsDataURL(file);
-}
-
+function editBarName(i){const n=prompt('Digite o novo nome da meta',bars[i].name); if(n){bars[i].name=n; localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars();}}
+function deleteBar(i){bars.splice(i,1); localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); updateLeaderboard();}
+function handleFileUpload(i,file){if(!file) return; const reader=new FileReader(); reader.onload=e=>{bars[i].proofs.push({date:new Date().toISOString(),image:e.target.result}); bars[i].progress=Math.min(bars[i].progress+10,100); localStorage.setItem('progressBars',JSON.stringify(bars)); renderBars(); updateLeaderboard();}; reader.readAsDataURL(file);}
 function updateLeaderboard(){
   const lb=document.getElementById('leaderboard'); lb.innerHTML='';
-  const sorted = [...bars].sort((a,b)=>b.progress-a.progress);
-  sorted.forEach(b=>{const div=document.createElement('div'); div.className='flex justify-between bg-gray-100 p-2 rounded'; div.innerHTML=`<span>${b.member} - ${b.name}</span><span>${b.progress}%</span>`; lb.appendChild(div);});
+  const sorted=[...bars].sort((a,b)=>b.progress-a.progress);
+  sorted.forEach(b=>{
+    const div=document.createElement('div'); div.className='flex justify-between bg-gray-100 p-2 rounded';
+    div.innerHTML=`<span>${b.member||'Membro'} - ${b.name}</span><span>${b.progress}%</span>`; lb.appendChild(div);
+  });
 }
 
-// Provas Modal
-function openProofsModal(i){
-  const modal=document.getElementById('proofsModal');
-  const container=document.getElementById('proofsContainer');
-  container.innerHTML='';
-  if(bars[i].proofs.length===0){container.innerHTML='<p>Nenhuma prova enviada.</p>'}else{bars[i].proofs.forEach(p=>{const img=document.createElement('img'); img.src=p.image; img.className='w-full rounded shadow'; container.appendChild(img);});}
-  modal.classList.remove('hidden');
-}
-function closeProofsModal(){document.getElementById('proofsModal').classList.add('hidden');}
-
-// Mensagem Global
-function sendGlobalMessage(msg){
-  const globalMsg=document.getElementById('globalMessage');
-  document.getElementById('globalMessageContent').textContent=msg;
-  globalMsg.style.display='block';
+// Mensagem global
+function sendGlobalMessage(){
+  const text=document.getElementById('globalMsgInput').value.trim();
+  if(!text) return alert('Digite uma mensagem!');
+  document.getElementById('globalMessageText').innerText=text;
+  document.getElementById('globalMessage').style.display='block';
 }
 function closeGlobalMessage(){document.getElementById('globalMessage').style.display='none';}
 
-document.addEventListener('DOMContentLoaded',()=>{renderBars(); updateLeaderboard();});
-</script></body>
-  </html>
+// Admin provas
+function showAllProofs(){alert('Aqui será exibido modal com todas as provas enviadas.');}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderBars();
+  updateLeaderboard();
+});
+</script>
+
+</body>
+</html>
