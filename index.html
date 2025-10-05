@@ -14,11 +14,12 @@
 @keyframes slideIn { from { transform: translateY(-100px); opacity:0;} to { transform: translateY(0); opacity:1; } }
 @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
 
-/* Modal animations */
-.fade-enter { opacity: 0; transform: scale(0.95); }
-.fade-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.3s ease, transform 0.3s ease; }
-.fade-leave { opacity: 1; transform: scale(1); }
-.fade-leave-active { opacity: 0; transform: scale(0.95); transition: opacity 0.2s ease, transform 0.2s ease; }
+/* compatibility classes used for modal animation */
+.opacity-0 { opacity: 0; }
+.opacity-100 { opacity: 1; }
+.pointer-events-none { pointer-events: none; }
+.scale-95 { transform: scale(0.95); }
+.scale-100 { transform: scale(1); }
 </style>
 </head>
 
@@ -33,7 +34,7 @@
 </div>
 
 <!-- Settings Button -->
-<button onclick="openSettingsModal()" class="fixed top-4 right-4 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition z-50">
+<button id="settingsBtn" onclick="openSettingsModal()" class="fixed top-4 right-4 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition z-50">
   <i data-feather="settings" class="w-6 h-6"></i>
 </button>
 
@@ -93,25 +94,6 @@
   </div>
 </div>
 
-<script>
-function openSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  modal.classList.remove('opacity-0', 'pointer-events-none');
-  modal.classList.add('opacity-100');
-  const content = document.getElementById('settingsContent');
-  content.classList.remove('scale-95');
-  content.classList.add('scale-100');
-}
-
-function closeSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  modal.classList.add('opacity-0', 'pointer-events-none');
-  modal.classList.remove('opacity-100');
-  const content = document.getElementById('settingsContent');
-  content.classList.add('scale-95');
-  content.classList.remove('scale-100');
-}
-
 <!-- Main Content -->
 <div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
@@ -148,10 +130,12 @@ function closeSettingsModal() {
 </div>
 
 <script type="module">
+/* ============================
+   Firebase imports & config
+   ============================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-// === Firebase Config ===
 const firebaseConfig = {
   apiKey: "SUA_API_KEY",
   authDomain: "SEU_AUTH_DOMAIN",
@@ -164,12 +148,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+/* ============================
+   State
+   ============================ */
 let bars = [];
 let barColor = '#3B82F6';
 let isAdmin = false;
 let currentUser = localStorage.getItem('currentUser') || '';
 
-// === Notifications ===
+/* ============================
+   Helpers / UI
+   ============================ */
 function showNotification(msg){
   const el = document.getElementById('notification');
   document.getElementById('notification-message').textContent = msg;
@@ -177,15 +166,29 @@ function showNotification(msg){
   setTimeout(()=>el.classList.add('hidden'),2500);
 }
 
-// === Modal ===
-function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
-function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+/* Modal open/close with animation (kept inside module, but exported to window below) */
+function openSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  modal.classList.remove('opacity-0', 'pointer-events-none');
+  modal.classList.add('opacity-100');
+  const content = document.getElementById('settingsContent');
+  content.classList.remove('scale-95');
+  content.classList.add('scale-100');
+}
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  modal.classList.add('opacity-0', 'pointer-events-none');
+  modal.classList.remove('opacity-100');
+  const content = document.getElementById('settingsContent');
+  content.classList.add('scale-95');
+  content.classList.remove('scale-100');
+}
 
-// === Theme & Bar Color ===
+/* Theme & bar color */
 function changeThemeColor(hex){ document.documentElement.style.setProperty('--primary-color', hex); showNotification('Tema alterado'); }
 function changeBarColor(hex){ barColor=hex; renderBars(); showNotification('Cor da barra alterada'); }
 
-// === Login Admin ===
+/* Admin login */
 function loginAdmin(){
   const user=document.getElementById('adminUsername').value.trim();
   const pass=document.getElementById('adminPassword').value.trim();
@@ -202,7 +205,7 @@ function loginAdmin(){
   });
 }
 
-// === Create Credential ===
+/* Create credential */
 function createCredential(){
   const user=document.getElementById('newCredentialUser').value.trim();
   const pass=document.getElementById('newCredentialPass').value.trim();
@@ -213,18 +216,28 @@ function createCredential(){
   document.getElementById('newCredentialPass').value='';
 }
 
-// === Add new bar ===
-document.getElementById('addBarBtn').addEventListener('click',()=>{
-  const name = document.getElementById('newBarName').value.trim();
-  if(!name){ alert('Digite o nome da meta'); return; }
-  currentUser = prompt('Digite seu nome','Membro') || 'Membro';
-  localStorage.setItem('currentUser', currentUser);
-  push(ref(db,'bars'), { name, member: currentUser, progress:0, proofs:[] });
-  document.getElementById('newBarName').value='';
-  showNotification('Meta adicionada!');
+/* Add new bar */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('addBarBtn').addEventListener('click',()=>{
+    const name = document.getElementById('newBarName').value.trim();
+    if(!name){ alert('Digite o nome da meta'); return; }
+    currentUser = prompt('Digite seu nome','Membro') || 'Membro';
+    localStorage.setItem('currentUser', currentUser);
+    push(ref(db,'bars'), { name, member: currentUser, progress:0, proofs:[] });
+    document.getElementById('newBarName').value='';
+    showNotification('Meta adicionada!');
+  });
+
+  document.getElementById('closeGlobalMsg').addEventListener('click', () => {
+    document.getElementById('globalMessageBox').classList.add('hidden');
+    localStorage.setItem('globalMsgSeen', 'true'); 
+  });
+
+  // ensure feather icons are replaced after DOM loaded
+  feather.replace();
 });
 
-// === Render bars ===
+/* Render bars */
 function renderBars(){
   const container = document.getElementById('barsContainer');
   container.innerHTML = '';
@@ -261,16 +274,19 @@ function renderBars(){
       </div>
     `;
 
-    if(canEdit){
-      barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, b.member, e.target.files[0]));
-    }
-
     container.appendChild(barEl);
+
+    if(canEdit){
+      const input = barEl.querySelector(`#progressPhoto-${b.key}`);
+      if (input) input.addEventListener('change', e => handleFileUpload(b.key, b.member, e.target.files[0]));
+    }
   });
+
+  // replace feather icons inside dynamically created elements
   feather.replace();
 }
 
-// === Delete bar ===
+/* Delete bar */
 function deleteBar(key, owner){
   if(!isAdmin && currentUser !== owner){ alert('Você só pode excluir suas próprias barras!'); return; }
   if(confirm('Deseja realmente excluir esta barra?')){
@@ -279,7 +295,7 @@ function deleteBar(key, owner){
   }
 }
 
-// === File upload ===
+/* File upload */
 function handleFileUpload(barKey, owner, file){
   if(!isAdmin && currentUser !== owner){ alert('Você só pode enviar provas para suas próprias barras!'); return; }
   if(!file) return;
@@ -292,7 +308,7 @@ function handleFileUpload(barKey, owner, file){
   reader.readAsDataURL(file);
 }
 
-// === Global message ===
+/* Global message */
 function sendGlobalMessage(){
   const msg=document.getElementById('globalMessageInput').value.trim();
   if(!msg){ alert('Digite uma mensagem'); return; }
@@ -301,18 +317,18 @@ function sendGlobalMessage(){
   document.getElementById('globalMessageInput').value='';
 }
 
-// === Create default admin if not exists ===
+/* Ensure default admin */
 get(ref(db, 'admins')).then(snap => {
   if (!snap.exists()) { push(ref(db, 'admins'), { username: 'admin', password: '123456' }); }
 });
 
-// === Listeners ===
+/* Listeners */
 onValue(ref(db,'bars'),snap=>{
   bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val}));
   renderBars();
 });
 
-// === Global message listener ===
+/* Global message listener */
 onValue(ref(db,'globalMessage'), snap => {
   const msg = snap.val(); 
   const box = document.getElementById('globalMessageBox');
@@ -335,15 +351,7 @@ onValue(ref(db,'globalMessage'), snap => {
   }
 });
 
-document.getElementById('closeGlobalMsg').addEventListener('click', () => {
-  document.getElementById('globalMessageBox').classList.add('hidden');
-  localStorage.setItem('globalMsgSeen', 'true'); 
-});
-
-// Feather icons
-document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
-
-// Expose functions globally
+/* expose functions that are used from HTML onclick attributes */
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
 window.changeThemeColor = changeThemeColor;
@@ -352,6 +360,8 @@ window.loginAdmin = loginAdmin;
 window.createCredential = createCredential;
 window.deleteBar = deleteBar;
 window.sendGlobalMessage = sendGlobalMessage;
+window.createCredential = createCredential;
+window.handleFileUpload = handleFileUpload;
 </script>
 
 </body>
