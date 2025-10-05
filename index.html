@@ -285,6 +285,16 @@ onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotifi
 
 // === Feather Icons ===
 document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
+
+// Torna funções acessíveis globalmente
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.changeThemeColor = changeThemeColor;
+window.changeBarColor = changeBarColor;
+window.loginAdmin = loginAdmin;
+window.createCredential = createCredential;
+window.deleteBar = deleteBar;
+window.sendGlobalMessage = sendGlobalMessage;
 </script>
 </body>
 </html>
