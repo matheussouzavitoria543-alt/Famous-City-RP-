@@ -13,26 +13,11 @@
 .notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
 @keyframes slideIn { from { transform: translateY(-100px); opacity:0;} to { transform: translateY(0); opacity:1; } }
 @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
-
-/* === ANIMAÇÕES DO MODAL === */
-.fade-enter {
-  opacity: 0;
-  transform: scale(0.95);
-}
-.fade-enter-active {
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.fade-leave {
-  opacity: 1;
-  transform: scale(1);
-}
-.fade-leave-active {
-  opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
+/* Modal animações */
+.fade-enter { opacity: 0; transform: scale(0.95); }
+.fade-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-leave { opacity: 1; transform: scale(1); }
+.fade-leave-active { opacity: 0; transform: scale(0.95); transition: opacity 0.2s ease, transform 0.2s ease; }
 </style>
 </head>
 
@@ -46,11 +31,8 @@
   </div>
 </div>
 
-<!-- BOTÃO DE CONFIGURAÇÕES (CANTO SUPERIOR DIREITO) -->
-<button 
-  onclick="openSettingsModal()" 
-  class="fixed top-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition"
->
+<!-- Botão de Configurações -->
+<button onclick="openSettingsModal()" class="fixed top-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition">
   <i data-feather="settings" class="w-6 h-6"></i>
 </button>
 
@@ -64,7 +46,7 @@
       </button>
     </div>
 
-    <!-- Configurações membros -->
+    <!-- Configurações Membros -->
     <div id="memberSettings" class="space-y-6">
       <h4 class="font-semibold mb-2">Tema do Sistema</h4>
       <div class="flex gap-3 mb-4">
@@ -92,7 +74,7 @@
       </div>
     </div>
 
-    <!-- Configurações admin -->
+    <!-- Configurações Admin -->
     <div id="adminSettings" class="space-y-6 hidden">
       <h4 class="font-semibold text-lg">Painel Administrativo</h4>
       <h4 class="font-semibold">Mensagem Global</h4>
@@ -104,8 +86,8 @@
       <input id="newCredentialPass" placeholder="Senha" class="px-3 py-2 border rounded w-full mb-2">
       <button onclick="createCredential()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Gerar Credencial</button>
 
-      <h4 class="font-semibold mt-4">Administradores</h4>
-      <div id="adminList" class="space-y-2"></div>
+      <h4 class="font-semibold mt-4">Provas Enviadas</h4>
+      <div id="proofsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </div>
   </div>
 </div>
@@ -118,7 +100,7 @@
 
   <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Adicionar Nova Meta</h2>
-    <div class="flex gap-4">
+    <div class="flex gap-4 flex-col md:flex-row">
       <input id="newBarName" type="text" placeholder="Nome da Meta" class="border rounded p-2 flex-1">
       <button id="addBarBtn" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Adicionar</button>
     </div>
@@ -134,9 +116,9 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+import { getDatabase, ref, set, push, onValue, get, remove, update } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-// Config Firebase
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDun-EEYvE7pUYtJCS7APB6J4xSD-gN0oE",
   authDomain: "famous-city-rp.firebaseapp.com",
@@ -147,42 +129,31 @@ const firebaseConfig = {
   appId: "1:938453127813:web:11c4e6500b3828a8bacfec",
   measurementId: "G-BXHKSPBFTN"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 let bars = [];
 let barColor = '#3B82F6';
 let isAdmin = false;
+let currentUser = '';
 
+// Notificação
 function showNotification(msg){
-  const el = document.getElementById('notification');
-  document.getElementById('notification-message').textContent = msg;
+  const el=document.getElementById('notification');
+  document.getElementById('notification-message').textContent=msg;
   el.classList.remove('hidden');
   setTimeout(()=>el.classList.add('hidden'),2500);
 }
 
-// === Funções do modal ===
-function openSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  const content = document.getElementById('settingsContent');
-  modal.classList.remove('hidden');
-  content.classList.remove('fade-leave-active');
-  content.classList.add('fade-enter-active');
-}
-function closeSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  const content = document.getElementById('settingsContent');
-  content.classList.remove('fade-enter-active');
-  content.classList.add('fade-leave-active');
-  setTimeout(() => modal.classList.add('hidden'), 200);
-}
+// Modal
+function openSettingsModal(){ document.getElementById('settingsModal').classList.remove('hidden'); }
+function closeSettingsModal(){ document.getElementById('settingsModal').classList.add('hidden'); }
 
-// === Temas e cores ===
+// Cores
 function changeThemeColor(hex){ document.documentElement.style.setProperty('--primary-color', hex); showNotification('Tema alterado'); }
 function changeBarColor(hex){ barColor=hex; renderBars(); showNotification('Cor da barra alterada'); }
 
-// === Login Admin ===
+// Admin login
 function loginAdmin(){
   const user=document.getElementById('adminUsername').value.trim();
   const pass=document.getElementById('adminPassword').value.trim();
@@ -195,115 +166,157 @@ function loginAdmin(){
       document.getElementById('memberSettings').classList.add('hidden');
       document.getElementById('adminSettings').classList.remove('hidden');
       showNotification('Login de administrador realizado!');
+      renderProofsAdmin();
     } else alert('Usuário ou senha incorretos.');
   });
 }
 
-// === Criar credenciais ===
+// Criar credenciais
 function createCredential(){
   const user=document.getElementById('newCredentialUser').value.trim();
   const pass=document.getElementById('newCredentialPass').value.trim();
   if(!user||!pass){ alert('Preencha usuário e senha'); return; }
   push(ref(db,'credentials'),{username:user,password:pass});
-  showNotification('Credencial gerada com sucesso!');
+  showNotification('Credencial gerada!');
   document.getElementById('newCredentialUser').value='';
   document.getElementById('newCredentialPass').value='';
 }
 
-// === Adicionar novas barras ===
+// Adicionar barra
 document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name=document.getElementById('newBarName').value.trim();
   if(!name){ alert('Digite o nome da meta'); return; }
-  const member=prompt('Digite seu nome','Membro')||'Membro';
-  push(ref(db,'bars'),{name,member,progress:0,proofs:[]});
+  currentUser=prompt('Digite seu nome','Membro')||'Membro';
+  push(ref(db,'bars'),{name,member:currentUser,creator:currentUser,progress:0,proofs:[]});
   document.getElementById('newBarName').value='';
   showNotification('Meta adicionada!');
 });
 
-// === Renderização ===
+// Render barras
 function renderBars(){
-  const container = document.getElementById('barsContainer');
-  container.innerHTML = '';
-  const leaderboard = document.getElementById('leaderboard');
-  leaderboard.innerHTML = '';
+  const container=document.getElementById('barsContainer');
+  container.innerHTML='';
+  const leaderboard=document.getElementById('leaderboard');
+  leaderboard.innerHTML='';
 
-  bars.forEach(b => {
-    const lbItem = document.createElement('div');
-    lbItem.textContent = `${b.member}: ${b.progress}%`;
-    lbItem.className = 'bg-gray-100 p-2 rounded';
+  bars.forEach(b=>{
+    const lbItem=document.createElement('div');
+    lbItem.textContent=`${b.member}: ${b.progress}%`;
+    lbItem.className='bg-gray-100 p-2 rounded';
     leaderboard.appendChild(lbItem);
 
-    const barEl = document.createElement('div');
-    barEl.className = 'bg-white rounded-lg shadow p-6';
-    barEl.innerHTML = `
+    const barEl=document.createElement('div');
+    barEl.className='bg-white rounded-lg shadow p-6';
+    const canDelete=isAdmin||b.creator===currentUser;
+    const canUpload=b.creator===currentUser;
+    const barColorUse=barColor;
+
+    barEl.innerHTML=`
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">${b.name} | ${b.member}</h3>
-        <button onclick="deleteBar('${b.key}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
+        ${canDelete?`<button onclick="deleteBar('${b.key}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>`:''}
       </div>
       <div class="flex items-center space-x-4 mb-2">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
-          <div class="progress-bar h-full rounded-full" style="width:${b.progress}%; background-color:${barColor}"></div>
+          <div class="progress-bar h-full rounded-full" style="width:${b.progress}%; background-color:${barColorUse}"></div>
         </div>
         <span>${b.progress}%</span>
       </div>
+      ${canUpload?`
       <div class="flex items-center gap-2">
         <input type="file" id="progressPhoto-${b.key}" accept="image/*" class="hidden">
         <label for="progressPhoto-${b.key}" class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
           <i data-feather="camera"></i> Enviar Prova
         </label>
-      </div>
-    `;
-    barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, e.target.files[0]));
+      </div>`:''}`;
+
+    if(canUpload) barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e=>handleFileUpload(b.key,e.target.files[0]));
+
     container.appendChild(barEl);
   });
   feather.replace();
 }
 
-// === Atualizações e upload ===
-function deleteBar(key){ if(confirm('Deseja realmente excluir esta barra?')){ remove(ref(db,'bars/'+key)); showNotification('Barra excluída!'); } }
+// Deletar barra
+function deleteBar(key){ if(confirm('Deseja realmente excluir esta barra?')) remove(ref(db,'bars/'+key)); }
+
+// Upload prova
 function handleFileUpload(barKey,file){
   if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
-    push(ref(db,'bars/'+barKey+'/proofs'),{date:new Date().toISOString(),image:e.target.result});
-    get(ref(db,'bars/'+barKey+'/progress')).then(snap=> set(ref(db,'bars/'+barKey+'/progress'), Math.min((snap.val()||0)+10,100)));
-    showNotification('Prova enviada e progresso atualizado');
+    push(ref(db,'bars/'+barKey+'/proofs'),{date:new Date().toISOString(),image:e.target.result,validated:false});
+    showNotification('Prova enviada! Aguarde validação do admin.');
+    renderProofsAdmin();
   };
   reader.readAsDataURL(file);
 }
+
+// Mensagem global
 function sendGlobalMessage(){
   const msg=document.getElementById('globalMessageInput').value.trim();
   if(!msg){ alert('Digite uma mensagem'); return; }
-  set(ref(db,'globalMessage'), msg);
+  set(ref(db,'globalMessage'),msg);
   showNotification('Mensagem global enviada!');
   document.getElementById('globalMessageInput').value='';
 }
 
-// === Criar admin padrão se não existir ===
-get(ref(db, 'admins')).then(snap => {
-  if (!snap.exists()) {
-    const newAdminRef = push(ref(db, 'admins'));
-    set(newAdminRef, { username: 'admin', password: '123456' });
-    console.log('✅ Admin padrão criado: admin / 123456');
-  }
-});
+// Render provas admin
+function renderProofsAdmin(){
+  if(!isAdmin) return;
+  const container=document.getElementById('proofsList');
+  container.innerHTML='';
+  bars.forEach(bar=>{
+    if(!bar.proofs) return;
+    bar.proofs.forEach((proof,index)=>{
+      if(proof.validated) return;
+      const div=document.createElement('div');
+      div.className='border rounded p-2 flex flex-col items-start gap-2 bg-gray-50';
+      div.innerHTML=`
+        <p><strong>Barra:</strong> ${bar.name} | <strong>Membro:</strong> ${bar.member}</p>
+        <img src="${proof.image}" class="w-full max-w-xs rounded mb-2"/>
+        <div class="flex gap-2">
+          <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Validar</button>
+          <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Remover</button>
+        </div>`;
+      const validateBtn=div.querySelector('button.bg-green-500');
+      const removeBtn=div.querySelector('button.bg-red-500');
 
-// === Escutas ===
-onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
+      validateBtn.addEventListener('click',()=>{
+        update(ref(db,`bars/${bar.key}/proofs/${index}`),{validated:true});
+        get(ref(db,`bars/${bar.key}/progress`)).then(snap=>set(ref(db,`bars/${bar.key}/progress`),Math.min((snap.val()||0)+10,100)));
+        renderProofsAdmin();
+      });
+
+      removeBtn.addEventListener('click',()=>{
+        remove(ref(db,`bars/${bar.key}/proofs/${index}`));
+        renderProofsAdmin();
+      });
+
+      container.appendChild(div);
+    });
+  });
+}
+
+// Firebase listeners
+onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); if(isAdmin) renderProofsAdmin(); });
 onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotification(`Mensagem Global: ${msg}`); });
 
-// === Feather Icons ===
+// Feather Icons
 document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
 
-// Torna funções acessíveis globalmente
-window.openSettingsModal = openSettingsModal;
-window.closeSettingsModal = closeSettingsModal;
-window.changeThemeColor = changeThemeColor;
-window.changeBarColor = changeBarColor;
-window.loginAdmin = loginAdmin;
-window.createCredential = createCredential;
-window.deleteBar = deleteBar;
-window.sendGlobalMessage = sendGlobalMessage;
+// Admin padrão
+get(ref(db,'admins')).then(snap=>{ if(!snap.exists()){ const newAdminRef=push(ref(db,'admins')); set(newAdminRef,{username:'admin',password:'123456'}); console.log('Admin padrão criado: admin / 123456'); } });
+
+// Tornar funções globais
+window.openSettingsModal=openSettingsModal;
+window.closeSettingsModal=closeSettingsModal;
+window.changeThemeColor=changeThemeColor;
+window.changeBarColor=changeBarColor;
+window.loginAdmin=loginAdmin;
+window.createCredential=createCredential;
+window.deleteBar=deleteBar;
+window.sendGlobalMessage=sendGlobalMessage;
 </script>
 </body>
 </html>
