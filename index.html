@@ -34,6 +34,7 @@
       </button>
     </div>
 
+    <!-- Configurações membros -->
     <div id="memberSettings" class="space-y-6">
       <h4 class="font-semibold mb-2">Tema do Sistema</h4>
       <div class="flex gap-3 mb-4">
@@ -61,6 +62,7 @@
       </div>
     </div>
 
+    <!-- Configurações admin -->
     <div id="adminSettings" class="space-y-6 hidden">
       <h4 class="font-semibold text-lg">Painel Administrativo</h4>
       <h4 class="font-semibold">Mensagem Global</h4>
@@ -78,6 +80,7 @@
   </div>
 </div>
 
+<!-- Conteúdo -->
 <div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
@@ -125,7 +128,6 @@ let bars = [];
 let barColor = '#3B82F6';
 let isAdmin = false;
 
-// Funções utilitárias
 function showNotification(msg){
   const el = document.getElementById('notification');
   document.getElementById('notification-message').textContent = msg;
@@ -155,7 +157,7 @@ function loginAdmin(){
   });
 }
 
-// Criar credenciais
+// Criar credenciais temporárias
 function createCredential(){
   const user=document.getElementById('newCredentialUser').value.trim();
   const pass=document.getElementById('newCredentialPass').value.trim();
@@ -166,7 +168,7 @@ function createCredential(){
   document.getElementById('newCredentialPass').value='';
 }
 
-// Adicionar barra
+// Adicionar nova barra
 document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name=document.getElementById('newBarName').value.trim();
   if(!name){ alert('Digite o nome da meta'); return; }
@@ -176,16 +178,27 @@ document.getElementById('addBarBtn').addEventListener('click',()=>{
   showNotification('Meta adicionada!');
 });
 
-// Renderizar barras
+// Renderizar barras e leaderboard
 function renderBars(){
   const container=document.getElementById('barsContainer');
   container.innerHTML='';
-  bars.forEach(b=>{
+  const leaderboard=document.getElementById('leaderboard');
+  leaderboard.innerHTML='';
+
+  const sortedBars=[...bars].sort((a,b)=>b.progress-a.progress);
+  sortedBars.forEach(b=>{
+    // Leaderboard
+    const lbItem=document.createElement('div');
+    lbItem.textContent=`${b.member}: ${b.progress}%`;
+    lbItem.className='bg-gray-100 p-2 rounded';
+    leaderboard.appendChild(lbItem);
+
+    // Barras
     const barEl=document.createElement('div');
     barEl.className='bg-white rounded-lg shadow p-6';
     barEl.innerHTML=`
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">${b.name} | Membro: ${b.member}</h3>
+        <h3 class="text-lg font-semibold">${b.name} | ${b.member}</h3>
         <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
       </div>
       <div class="flex items-center space-x-4 mb-2">
@@ -194,26 +207,37 @@ function renderBars(){
         </div>
         <span>${b.progress}%</span>
       </div>
+      <div class="flex items-center gap-2">
+        <input type="file" accept="image/*" class="hidden">
+        <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
+          <i data-feather="camera"></i> Enviar Prova
+        </label>
+      </div>
     `;
-
-    // Botão excluir
-    const deleteBtn = barEl.querySelector('button');
-    deleteBtn.addEventListener('click',()=> deleteBar(b.key));
-
+    barEl.querySelector('button').addEventListener('click',()=> deleteBar(b.key));
+    const fileInput=barEl.querySelector('input[type=file]');
+    fileInput.addEventListener('change',()=> handleFileUpload(b.key,fileInput.files[0]));
+    const label=barEl.querySelector('label');
+    label.addEventListener('click',()=> fileInput.click());
     container.appendChild(barEl);
   });
   feather.replace();
 }
 
-// Deletar barra
-function deleteBar(key){
-  if(confirm('Deseja realmente excluir esta barra?')){
-    remove(ref(db,'bars/'+key));
-    showNotification('Barra excluída!');
-  }
+// Atualizações
+function updateBarName(key,name){ set(ref(db,'bars/'+key+'/name'),name); showNotification('Nome da barra atualizado'); }
+function updateBarMember(key,member){ set(ref(db,'bars/'+key+'/member'),member); showNotification('Nome do membro atualizado'); }
+function deleteBar(key){ if(confirm('Deseja realmente excluir esta barra?')){ remove(ref(db,'bars/'+key)); showNotification('Barra excluída!'); } }
+function handleFileUpload(barKey,file){
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    push(ref(db,'bars/'+barKey+'/proofs'),{date:new Date().toISOString(),image:e.target.result});
+    get(ref(db,'bars/'+barKey+'/progress')).then(snap=> set(ref(db,'bars/'+barKey+'/progress'), Math.min((snap.val()||0)+10,100)));
+    showNotification('Prova enviada e progresso atualizado');
+  };
+  reader.readAsDataURL(file);
 }
-
-// Global message
 function sendGlobalMessage(){
   const msg=document.getElementById('globalMessageInput').value.trim();
   if(!msg){ alert('Digite uma mensagem'); return; }
@@ -222,15 +246,9 @@ function sendGlobalMessage(){
   document.getElementById('globalMessageInput').value='';
 }
 
-// Firebase listeners
-onValue(ref(db,'bars'),snap=>{
-  bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val}));
-  renderBars();
-});
-onValue(ref(db,'globalMessage'),snap=>{
-  const msg=snap.val();
-  if(msg) showNotification(`Mensagem Global: ${msg}`);
-});
+// Escutar mudanças
+onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
+onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotification(`Mensagem Global: ${msg}`); });
 
 document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
 </script>
