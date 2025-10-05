@@ -34,7 +34,6 @@
       </button>
     </div>
 
-    <!-- Aba de Membros -->
     <div id="memberSettings" class="space-y-6">
       <h4 class="font-semibold mb-2">Tema do Sistema</h4>
       <div class="flex gap-3 mb-4">
@@ -62,10 +61,8 @@
       </div>
     </div>
 
-    <!-- Aba Admin -->
     <div id="adminSettings" class="space-y-6 hidden">
       <h4 class="font-semibold text-lg">Painel Administrativo</h4>
-
       <h4 class="font-semibold">Mensagem Global</h4>
       <input id="globalMessageInput" type="text" placeholder="Mensagem para todos" class="w-full px-3 py-2 border rounded-lg">
       <button onclick="sendGlobalMessage()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600">Enviar</button>
@@ -81,7 +78,6 @@
   </div>
 </div>
 
-<!-- Conteúdo principal -->
 <div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
@@ -136,12 +132,13 @@ function showNotification(msg){
   el.classList.remove('hidden');
   setTimeout(()=>el.classList.add('hidden'),2500);
 }
+
 function openSettingsModal(){ document.getElementById('settingsModal').classList.remove('hidden'); }
 function closeSettingsModal(){ document.getElementById('settingsModal').classList.add('hidden'); }
 function changeThemeColor(hex){ document.documentElement.style.setProperty('--primary-color', hex); showNotification('Tema alterado'); }
 function changeBarColor(hex){ barColor=hex; renderBars(); showNotification('Cor da barra alterada'); }
 
-// Login admin
+// Login Admin
 function loginAdmin(){
   const user=document.getElementById('adminUsername').value.trim();
   const pass=document.getElementById('adminPassword').value.trim();
@@ -169,11 +166,11 @@ function createCredential(){
   document.getElementById('newCredentialPass').value='';
 }
 
-// Adicionar meta
-document.getElementById('addBarBtn').addEventListener('click', ()=>{
+// Adicionar barra
+document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name=document.getElementById('newBarName').value.trim();
   if(!name){ alert('Digite o nome da meta'); return; }
-  const member=prompt('Digite seu nome:','Membro')||'Membro';
+  const member=prompt('Digite seu nome','Membro')||'Membro';
   push(ref(db,'bars'),{name,member,progress:0,proofs:[]});
   document.getElementById('newBarName').value='';
   showNotification('Meta adicionada!');
@@ -182,17 +179,14 @@ document.getElementById('addBarBtn').addEventListener('click', ()=>{
 // Renderizar barras
 function renderBars(){
   const container=document.getElementById('barsContainer');
-  const leaderboard=document.getElementById('leaderboard');
   container.innerHTML='';
-  leaderboard.innerHTML='';
   bars.forEach(b=>{
-    // Barra individual
     const barEl=document.createElement('div');
     barEl.className='bg-white rounded-lg shadow p-6';
     barEl.innerHTML=`
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">${b.name} <span class="text-sm text-gray-500">| ${b.member}</span></h3>
-        <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onclick="deleteBar('${b.key}')">Excluir</button>
+        <h3 class="text-lg font-semibold">${b.name} | Membro: ${b.member}</h3>
+        <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
       </div>
       <div class="flex items-center space-x-4 mb-2">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
@@ -200,54 +194,43 @@ function renderBars(){
         </div>
         <span>${b.progress}%</span>
       </div>
-      <div class="flex items-center gap-2">
-        <input type="file" id="file-${b.key}" accept="image/*" class="hidden" onchange="handleFileUpload('${b.key}', this.files[0])">
-        <label for="file-${b.key}" class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
-          <i data-feather="camera"></i> Enviar Prova
-        </label>
-      </div>
     `;
-    container.appendChild(barEl);
 
-    // Atualizar leaderboard
-    const leaderEl=document.createElement('div');
-    leaderEl.className='flex justify-between bg-gray-100 px-4 py-2 rounded';
-    leaderEl.textContent=`${b.member} - ${b.name}: ${b.progress}%`;
-    leaderboard.appendChild(leaderEl);
+    // Botão excluir
+    const deleteBtn = barEl.querySelector('button');
+    deleteBtn.addEventListener('click',()=> deleteBar(b.key));
+
+    container.appendChild(barEl);
   });
   feather.replace();
 }
 
-// Atualizações
-function updateBarName(key,name){ set(ref(db,'bars/'+key+'/name'),name); showNotification('Nome da barra atualizado'); }
-function updateBarMember(key,member){ set(ref(db,'bars/'+key+'/member'),member); showNotification('Nome do membro atualizado'); }
-function deleteBar(key){ if(confirm('Deseja realmente excluir esta barra?')){ remove(ref(db,'bars/'+key)); showNotification('Barra excluída!'); } }
-function handleFileUpload(barKey,file){
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    push(ref(db,'bars/'+barKey+'/proofs'),{date:new Date().toISOString(),image:e.target.result});
-    get(ref(db,'bars/'+barKey+'/progress')).then(snap=>{
-      const current=snap.val()||0;
-      set(ref(db,'bars/'+barKey+'/progress'),Math.min(current+10,100));
-    });
-    showNotification('Prova enviada e progresso atualizado');
-  };
-  reader.readAsDataURL(file);
+// Deletar barra
+function deleteBar(key){
+  if(confirm('Deseja realmente excluir esta barra?')){
+    remove(ref(db,'bars/'+key));
+    showNotification('Barra excluída!');
+  }
 }
 
-// Mensagem global
+// Global message
 function sendGlobalMessage(){
   const msg=document.getElementById('globalMessageInput').value.trim();
   if(!msg){ alert('Digite uma mensagem'); return; }
-  set(ref(db,'globalMessage'),msg);
+  set(ref(db,'globalMessage'), msg);
   showNotification('Mensagem global enviada!');
   document.getElementById('globalMessageInput').value='';
 }
 
-// Escutar mudanças
-onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
-onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotification(`Mensagem Global: ${msg}`); });
+// Firebase listeners
+onValue(ref(db,'bars'),snap=>{
+  bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val}));
+  renderBars();
+});
+onValue(ref(db,'globalMessage'),snap=>{
+  const msg=snap.val();
+  if(msg) showNotification(`Mensagem Global: ${msg}`);
+});
 
 document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
 </script>
