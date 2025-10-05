@@ -14,31 +14,17 @@
 @keyframes slideIn { from { transform: translateY(-100px); opacity:0;} to { transform: translateY(0); opacity:1; } }
 @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
 
-/* === ANIMAÇÕES DO MODAL === */
-.fade-enter {
-  opacity: 0;
-  transform: scale(0.95);
-}
-.fade-enter-active {
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.fade-leave {
-  opacity: 1;
-  transform: scale(1);
-}
-.fade-leave-active {
-  opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
+/* Modal animations */
+.fade-enter { opacity: 0; transform: scale(0.95); }
+.fade-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-leave { opacity: 1; transform: scale(1); }
+.fade-leave-active { opacity: 0; transform: scale(0.95); transition: opacity 0.2s ease, transform 0.2s ease; }
 </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
 
-<!-- Notificação -->
+<!-- Notification -->
 <div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
   <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
     <i data-feather="alert-circle" class="mr-2"></i>
@@ -46,15 +32,12 @@
   </div>
 </div>
 
-<!-- BOTÃO DE CONFIGURAÇÕES (CANTO SUPERIOR DIREITO) -->
-<button 
-  onclick="openSettingsModal()" 
-  class="fixed top-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition"
->
+<!-- Settings Button -->
+<button onclick="openSettingsModal()" class="fixed top-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition">
   <i data-feather="settings" class="w-6 h-6"></i>
 </button>
 
-<!-- Modal Configurações -->
+<!-- Settings Modal -->
 <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
   <div id="settingsContent" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md overflow-auto max-h-[90vh] fade-enter">
     <div class="flex justify-between items-center mb-6 border-b pb-4">
@@ -64,7 +47,7 @@
       </button>
     </div>
 
-    <!-- Configurações membros -->
+    <!-- Member Settings -->
     <div id="memberSettings" class="space-y-6">
       <h4 class="font-semibold mb-2">Tema do Sistema</h4>
       <div class="flex gap-3 mb-4">
@@ -92,7 +75,7 @@
       </div>
     </div>
 
-    <!-- Configurações admin -->
+    <!-- Admin Settings -->
     <div id="adminSettings" class="space-y-6 hidden">
       <h4 class="font-semibold text-lg">Painel Administrativo</h4>
       <h4 class="font-semibold">Mensagem Global</h4>
@@ -110,7 +93,7 @@
   </div>
 </div>
 
-<!-- Conteúdo Principal -->
+<!-- Main Content -->
 <div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
@@ -132,7 +115,7 @@
   <div id="barsContainer" class="space-y-6"></div>
 </div>
 
-<!-- Mensagem Global -->
+<!-- Global Message -->
 <div id="globalMessageBox" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-[90%] max-w-md hidden z-50">
   <div class="flex justify-between items-start">
     <div>
@@ -149,25 +132,25 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-// Config Firebase
+// === Firebase Config ===
 const firebaseConfig = {
-  apiKey: "AIzaSyDun-EEYvE7pUYtJCS7APB6J4xSD-gN0oE",
-  authDomain: "famous-city-rp.firebaseapp.com",
-  databaseURL: "https://famous-city-rp-default-rtdb.firebaseio.com",
-  projectId: "famous-city-rp",
-  storageBucket: "famous-city-rp.firebasestorage.app",
-  messagingSenderId: "938453127813",
-  appId: "1:938453127813:web:11c4e6500b3828a8bacfec",
-  measurementId: "G-BXHKSPBFTN"
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_AUTH_DOMAIN",
+  databaseURL: "SUA_DATABASE_URL",
+  projectId: "SEU_PROJECT_ID",
+  storageBucket: "SEU_STORAGE_BUCKET",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 let bars = [];
 let barColor = '#3B82F6';
 let isAdmin = false;
+let currentUser = localStorage.getItem('currentUser') || '';
 
+// === Notifications ===
 function showNotification(msg){
   const el = document.getElementById('notification');
   document.getElementById('notification-message').textContent = msg;
@@ -175,23 +158,11 @@ function showNotification(msg){
   setTimeout(()=>el.classList.add('hidden'),2500);
 }
 
-// === Funções do modal ===
-function openSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  const content = document.getElementById('settingsContent');
-  modal.classList.remove('hidden');
-  content.classList.remove('fade-leave-active');
-  content.classList.add('fade-enter-active');
-}
-function closeSettingsModal() {
-  const modal = document.getElementById('settingsModal');
-  const content = document.getElementById('settingsContent');
-  content.classList.remove('fade-enter-active');
-  content.classList.add('fade-leave-active');
-  setTimeout(() => modal.classList.add('hidden'), 200);
-}
+// === Modal ===
+function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
 
-// === Temas e cores ===
+// === Theme & Bar Color ===
 function changeThemeColor(hex){ document.documentElement.style.setProperty('--primary-color', hex); showNotification('Tema alterado'); }
 function changeBarColor(hex){ barColor=hex; renderBars(); showNotification('Cor da barra alterada'); }
 
@@ -212,7 +183,7 @@ function loginAdmin(){
   });
 }
 
-// === Criar credenciais ===
+// === Create Credential ===
 function createCredential(){
   const user=document.getElementById('newCredentialUser').value.trim();
   const pass=document.getElementById('newCredentialPass').value.trim();
@@ -223,26 +194,18 @@ function createCredential(){
   document.getElementById('newCredentialPass').value='';
 }
 
-// === Adicionar novas barras ===
+// === Add new bar ===
 document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name = document.getElementById('newBarName').value.trim();
-  if(!name){ 
-    alert('Digite o nome da meta'); 
-    return; 
-  }
-  const member = prompt('Digite seu nome','Membro') || 'Membro';
-
-  // SALVA O USUÁRIO ATUAL LOCALMENTE
-  localStorage.setItem('currentUser', member);
-
-  // ADICIONA A BARRA NO BANCO
-  push(ref(db,'bars'), { name, member, progress:0, proofs:[] });
-
+  if(!name){ alert('Digite o nome da meta'); return; }
+  currentUser = prompt('Digite seu nome','Membro') || 'Membro';
+  localStorage.setItem('currentUser', currentUser);
+  push(ref(db,'bars'), { name, member: currentUser, progress:0, proofs:[] });
   document.getElementById('newBarName').value='';
   showNotification('Meta adicionada!');
 });
 
-// === Renderização ===
+// === Render bars ===
 function renderBars(){
   const container = document.getElementById('barsContainer');
   container.innerHTML = '';
@@ -260,7 +223,7 @@ function renderBars(){
     barEl.innerHTML = `
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">${b.name} | ${b.member}</h3>
-        <button onclick="deleteBar('${b.key}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
+        <button onclick="deleteBar('${b.key}','${b.member}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
       </div>
       <div class="flex items-center space-x-4 mb-2">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
@@ -275,15 +238,24 @@ function renderBars(){
         </label>
       </div>
     `;
-    barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, e.target.files[0]));
+    barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, b.member, e.target.files[0]));
     container.appendChild(barEl);
   });
   feather.replace();
 }
 
-// === Atualizações e upload ===
-function deleteBar(key){ if(confirm('Deseja realmente excluir esta barra?')){ remove(ref(db,'bars/'+key)); showNotification('Barra excluída!'); } }
-function handleFileUpload(barKey,file){
+// === Delete bar ===
+function deleteBar(key, owner){
+  if(!isAdmin && currentUser !== owner){ alert('Você só pode excluir suas próprias barras!'); return; }
+  if(confirm('Deseja realmente excluir esta barra?')){
+    remove(ref(db,'bars/'+key));
+    showNotification('Barra excluída!');
+  }
+}
+
+// === File upload ===
+function handleFileUpload(barKey, owner, file){
+  if(!isAdmin && currentUser !== owner){ alert('Você só pode enviar provas para suas próprias barras!'); return; }
   if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
@@ -293,6 +265,8 @@ function handleFileUpload(barKey,file){
   };
   reader.readAsDataURL(file);
 }
+
+// === Global message ===
 function sendGlobalMessage(){
   const msg=document.getElementById('globalMessageInput').value.trim();
   if(!msg){ alert('Digite uma mensagem'); return; }
@@ -301,26 +275,24 @@ function sendGlobalMessage(){
   document.getElementById('globalMessageInput').value='';
 }
 
-// === Criar admin padrão se não existir ===
+// === Create default admin if not exists ===
 get(ref(db, 'admins')).then(snap => {
-  if (!snap.exists()) {
-    const newAdminRef = push(ref(db, 'admins'));
-    set(newAdminRef, { username: 'admin', password: '123456' });
-    console.log('✅ Admin padrão criado: admin / 123456');
-  }
+  if (!snap.exists()) { push(ref(db, 'admins'), { username: 'admin', password: '123456' }); }
 });
-  
-// === Escutas ===
-onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
 
-// === Nova Escuta Global Message com exibição única ===
+// === Listeners ===
+onValue(ref(db,'bars'),snap=>{
+  bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val}));
+  renderBars();
+});
+
+// === Global message listener ===
 onValue(ref(db,'globalMessage'), snap => {
   const msg = snap.val(); 
   const box = document.getElementById('globalMessageBox');
   const msgText = document.getElementById('globalMessageText');
 
   box.classList.add('hidden'); 
-
   if (!msg) return; 
 
   const lastMsg = localStorage.getItem('lastGlobalMsg');
@@ -342,10 +314,10 @@ document.getElementById('closeGlobalMsg').addEventListener('click', () => {
   localStorage.setItem('globalMsgSeen', 'true'); 
 });
 
-// === Feather Icons ===
+// Feather icons
 document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
 
-// Torna funções acessíveis globalmente
+// Expose functions globally
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
 window.changeThemeColor = changeThemeColor;
@@ -355,5 +327,6 @@ window.createCredential = createCredential;
 window.deleteBar = deleteBar;
 window.sendGlobalMessage = sendGlobalMessage;
 </script>
+
 </body>
 </html>
