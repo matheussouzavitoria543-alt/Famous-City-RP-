@@ -1,243 +1,142 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Progresso em Foco</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/feather-icons"></script>
-<style>
-  body {
-    transition: background-color 0.3s ease-in-out;
-  }
-  .progress-bar {
-    transition: width 0.5s ease-in-out;
-  }
-  #globalMessageBox {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  #globalMessageBox.show {
-    display: flex;
-    opacity: 1;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progresso em Foco</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    body {
+      background-color: #f9fafb;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Animação suave */
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Estilo do modal da mensagem global */
+    .global-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      z-index: 9999;
+      width: 90%;
+      max-width: 420px;
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .global-message.show {
+      display: block;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: #333;
+    }
+
+    .close-btn:hover {
+      color: #e11d48;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="min-h-screen flex flex-col">
+  <!-- Barra superior -->
+  <nav class="bg-blue-600 text-white py-3 px-4 flex justify-between items-center shadow-md">
+    <h1 class="text-lg font-bold">Progresso em Foco</h1>
+    <button onclick="toggleAdmin()" class="hover:text-gray-200">
+      <i data-feather="settings"></i>
+    </button>
+  </nav>
 
-  <!-- Cabeçalho -->
-  <header class="flex justify-between items-center p-4 bg-blue-600 text-white">
-    <h1 class="text-xl font-bold">Progresso em Foco</h1>
-    <div class="flex gap-3 items-center">
-      <button id="adminAreaBtn" onclick="toggleAdminArea()" class="hidden bg-white text-blue-600 px-3 py-1 rounded font-semibold hover:bg-blue-100">
-        Área de Administração
-      </button>
-      <button onclick="openSettingsModal()" class="hover:text-gray-300">
-        <i data-feather="settings"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- Mensagem Global -->
-  <div id="globalMessageBox" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
-    <div class="bg-white p-6 rounded-xl shadow-xl text-center max-w-md w-full relative">
-      <button onclick="closeGlobalMessage()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
-        <i data-feather="x" class="w-5 h-5"></i>
-      </button>
-      <h2 class="text-2xl font-bold mb-2">Mensagem da Moderação</h2>
-      <p id="globalMessageContent" class="text-gray-700 mb-4"></p>
-      <button onclick="closeGlobalMessage()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Fechar</button>
-    </div>
-  </div>
-
-  <!-- Container Principal -->
-  <main class="p-6 space-y-6" id="mainContent">
-    <div id="barsContainer" class="grid gap-4"></div>
-    <div id="leaderboard" class="bg-white rounded-lg p-4 shadow-md">
-      <h2 class="font-bold text-xl mb-3">Leaderboard</h2>
+  <!-- Conteúdo -->
+  <main class="flex-1 flex items-center justify-center bg-red-500">
+    <div class="bg-white rounded-xl shadow-md p-4 w-11/12 max-w-lg text-center">
+      <h2 class="text-xl font-semibold mb-3">Leaderboard</h2>
+      <p class="text-gray-500">Sistema de progresso em desenvolvimento...</p>
     </div>
   </main>
 
-  <!-- Área de Administração (escondida até o login) -->
-  <section id="adminArea" class="hidden p-6 space-y-6">
-    <h2 class="text-2xl font-bold">Painel Administrativo</h2>
+  <!-- Painel admin -->
+  <div id="adminPanel" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md fade-in relative">
+      <button onclick="toggleAdmin()" class="absolute right-3 top-3 text-gray-600 hover:text-red-600">
+        <i data-feather="x"></i>
+      </button>
+      <h2 class="text-lg font-bold mb-4 text-gray-700">Painel da Administração</h2>
 
-    <div>
-      <h4 class="font-semibold mb-2">Mensagem Global</h4>
-      <input id="globalMessageInput" type="text" placeholder="Mensagem para todos" class="w-full px-3 py-2 border rounded-lg mb-2">
-      <button onclick="sendGlobalMessage()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Enviar</button>
+      <textarea id="globalMessageInput" rows="3" class="w-full border rounded-md p-2 mb-4" placeholder="Digite a mensagem global..."></textarea>
+
+      <button onclick="enviarMensagemGlobal()" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+        Enviar Mensagem Global
+      </button>
     </div>
+  </div>
 
-    <div>
-      <h4 class="font-semibold mt-4">Provas Enviadas</h4>
-      <div id="proofsContainer" class="space-y-3"></div>
-    </div>
-
-    <div>
-      <h4 class="font-semibold mt-4">Personalização do Site</h4>
-      <button onclick="setAdminThemeColor()" class="bg-green-500 text-white px-4 py-2 rounded">Editar Cores</button>
-      <input type="file" accept="image/*" onchange="setAdminBackground(event)" class="mt-2 w-full">
-    </div>
-
-    <button onclick="logoutAdmin()" class="bg-red-500 text-white px-4 py-2 rounded mt-6 hover:bg-red-600">
-      Sair do Painel
-    </button>
-  </section>
-
-  <!-- Modal de Configurações -->
-  <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md overflow-auto max-h-[90vh]">
-      <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
-        <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700">
-          <i data-feather="x" class="w-6 h-6"></i>
-        </button>
-      </div>
-
-      <div id="memberSettings" class="space-y-6">
-        <h4 class="font-semibold mb-2">Tema do Site</h4>
-        <div class="flex gap-3 mb-4">
-          <button onclick="changeThemeColor('#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeThemeColor('#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeThemeColor('#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeThemeColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeThemeColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
-        </div>
-
-        <h4 class="font-semibold mb-2">Cor das Barras</h4>
-        <div class="flex gap-3 mb-4">
-          <button onclick="changeBarColor('#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeBarColor('#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeBarColor('#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeBarColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeBarColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
-        </div>
-
-        <h4 class="font-semibold mb-2">Plano de Fundo</h4>
-        <input type="file" accept="image/*" onchange="setMemberBackground(event)" class="w-full mb-3">
-
-        <div class="pt-4 border-t">
-          <h4 class="font-semibold mb-2">Login do Administrador</h4>
-          <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg mb-2">
-          <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg mb-2">
-          <button onclick="loginAdmin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Entrar como Admin</button>
-        </div>
-      </div>
-    </div>
+  <!-- Mensagem Global -->
+  <div id="globalMessage" class="global-message fade-in">
+    <button class="close-btn" onclick="fecharMensagem()">×</button>
+    <h2 class="text-lg font-bold mb-2 text-red-600">Mensagem da Moderação</h2>
+    <p id="globalMessageText" class="text-gray-700"></p>
   </div>
 
   <script>
     feather.replace();
-    const adminCredentials = [{user:'admin', pass:'1234'}];
-    let isAdmin = false;
 
-    function openSettingsModal() {
-      document.getElementById('settingsModal').classList.remove('hidden');
-    }
-    function closeSettingsModal() {
-      document.getElementById('settingsModal').classList.add('hidden');
+    function toggleAdmin() {
+      const adminPanel = document.getElementById('adminPanel');
+      adminPanel.classList.toggle('hidden');
     }
 
-    function loginAdmin(){
-      const user = document.getElementById('adminUsername').value;
-      const pass = document.getElementById('adminPassword').value;
-      const valid = adminCredentials.some(c=>c.user===user && c.pass===pass);
-      if(valid){
-        isAdmin = true;
-        localStorage.setItem('isAdmin','true');
-        alert('Login de administrador bem-sucedido!');
-        closeSettingsModal();
-        document.getElementById('adminAreaBtn').classList.remove('hidden');
-      } else {
-        alert('Usuário ou senha incorretos.');
+    function enviarMensagemGlobal() {
+      const mensagem = document.getElementById('globalMessageInput').value.trim();
+      if (!mensagem) return alert('Digite uma mensagem antes de enviar.');
+
+      localStorage.setItem('mensagemGlobal', mensagem);
+      localStorage.removeItem('mensagemLida'); // Permite que os membros vejam a nova mensagem
+
+      alert('Mensagem global enviada com sucesso!');
+      document.getElementById('adminPanel').classList.add('hidden');
+      mostrarMensagemGlobal();
+    }
+
+    function mostrarMensagemGlobal() {
+      const mensagem = localStorage.getItem('mensagemGlobal');
+      const mensagemLida = localStorage.getItem('mensagemLida');
+      const msgBox = document.getElementById('globalMessage');
+      const msgText = document.getElementById('globalMessageText');
+
+      if (mensagem && !mensagemLida) {
+        msgText.textContent = mensagem;
+        msgBox.classList.add('show');
       }
     }
 
-    function logoutAdmin(){
-      isAdmin = false;
-      localStorage.removeItem('isAdmin');
-      document.getElementById('adminArea').classList.add('hidden');
-      document.getElementById('mainContent').classList.remove('hidden');
-      document.getElementById('adminAreaBtn').classList.add('hidden');
-      alert('Você saiu da área de administração.');
+    function fecharMensagem() {
+      const msgBox = document.getElementById('globalMessage');
+      msgBox.classList.remove('show');
+      localStorage.setItem('mensagemLida', 'true');
     }
 
-    function toggleAdminArea(){
-      const adminArea = document.getElementById('adminArea');
-      const mainContent = document.getElementById('mainContent');
-      if(adminArea.classList.contains('hidden')){
-        mainContent.classList.add('hidden');
-        adminArea.classList.remove('hidden');
-      } else {
-        adminArea.classList.add('hidden');
-        mainContent.classList.remove('hidden');
-      }
-    }
-
-    function sendGlobalMessage(){
-      const msg = document.getElementById('globalMessageInput').value.trim();
-      if(msg){
-        localStorage.removeItem('globalMsgSeen');
-        localStorage.setItem('globalMessage', msg);
-        showGlobalMessage();
-        alert('Mensagem global enviada com sucesso!');
-      }
-    }
-
-    function showGlobalMessage(){
-      const msg = localStorage.getItem('globalMessage');
-      const seen = localStorage.getItem('globalMsgSeen');
-      if(msg && !seen){
-        document.getElementById('globalMessageContent').textContent = msg;
-        const box = document.getElementById('globalMessageBox');
-        box.classList.add('show');
-        box.style.display = 'flex';
-      }
-    }
-
-    function closeGlobalMessage(){
-      const box = document.getElementById('globalMessageBox');
-      box.style.opacity='0';
-      localStorage.setItem('globalMsgSeen','true');
-      setTimeout(()=>box.style.display='none',400);
-    }
-
-    function changeThemeColor(color) {
-      document.body.style.backgroundColor = color;
-      localStorage.setItem('themeColor', color);
-    }
-    function changeBarColor(color) {
-      localStorage.setItem('barColor', color);
-    }
-    function setMemberBackground(event) {
-      const file = event.target.files[0];
-      if(file){
-        const reader = new FileReader();
-        reader.onload = e => {
-          document.body.style.backgroundImage = `url('${e.target.result}')`;
-          document.body.style.backgroundSize = 'cover';
-          localStorage.setItem('memberBg', e.target.result);
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    window.addEventListener('load',()=>{
-      feather.replace();
-      const theme=localStorage.getItem('themeColor');
-      if(theme) document.body.style.backgroundColor=theme;
-      const bg=localStorage.getItem('memberBg');
-      if(bg){
-        document.body.style.backgroundImage=`url('${bg}')`;
-        document.body.style.backgroundSize='cover';
-      }
-      showGlobalMessage();
-      if(localStorage.getItem('isAdmin')==='true'){
-        isAdmin = true;
-        document.getElementById('adminAreaBtn').classList.remove('hidden');
-      }
-    });
+    document.addEventListener('DOMContentLoaded', mostrarMensagemGlobal);
   </script>
 </body>
 </html>
