@@ -180,47 +180,58 @@ document.getElementById('addBarBtn').addEventListener('click',()=>{
 
 // Renderizar barras e leaderboard
 function renderBars(){
-  const container=document.getElementById('barsContainer');
-  container.innerHTML='';
-  const leaderboard=document.getElementById('leaderboard');
-  leaderboard.innerHTML='';
+  const container = document.getElementById('barsContainer');
+  container.innerHTML = '';
+  const leaderboard = document.getElementById('leaderboard');
+  leaderboard.innerHTML = '';
 
-  const sortedBars=[...bars].sort((a,b)=>b.progress-a.progress);
-  sortedBars.forEach(b=>{
+  bars.forEach(b => {
     // Leaderboard
-    const lbItem=document.createElement('div');
-    lbItem.textContent=`${b.member}: ${b.progress}%`;
-    lbItem.className='bg-gray-100 p-2 rounded';
+    const lbItem = document.createElement('div');
+    lbItem.textContent = `${b.member}: ${b.progress}%`;
+    lbItem.className = 'bg-gray-100 p-2 rounded';
     leaderboard.appendChild(lbItem);
 
     // Barras
-    const barEl=document.createElement('div');
-    barEl.className='bg-white rounded-lg shadow p-6';
-    barEl.innerHTML=`
+    const barEl = document.createElement('div');
+    barEl.className = 'bg-white rounded-lg shadow p-6';
+    
+    barEl.innerHTML = `
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">${b.name} | ${b.member}</h3>
-        <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
+        <h3 class="text-lg font-semibold">
+          <input type="text" value="${b.name}" onchange="updateBarName('${b.key}', this.value)" class="border-b border-gray-300 px-1">
+          <span class="text-sm text-gray-500"> | Membro:
+            <input type="text" value="${b.member || 'Membro'}" onchange="updateBarMember('${b.key}', this.value)" class="border-b border-gray-300 px-1">
+          </span>
+        </h3>
+        <button onclick="deleteBar('${b.key}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
       </div>
+
       <div class="flex items-center space-x-4 mb-2">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
           <div class="progress-bar h-full rounded-full" style="width:${b.progress}%; background-color:${barColor}"></div>
         </div>
         <span>${b.progress}%</span>
       </div>
+
       <div class="flex items-center gap-2">
-        <input type="file" accept="image/*" class="hidden">
-        <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
+        <input type="file" id="progressPhoto-${b.key}" accept="image/*" class="hidden">
+        <label for="progressPhoto-${b.key}" class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
           <i data-feather="camera"></i> Enviar Prova
         </label>
       </div>
     `;
-    barEl.querySelector('button').addEventListener('click',()=> deleteBar(b.key));
-    const fileInput=barEl.querySelector('input[type=file]');
-    fileInput.addEventListener('change',()=> handleFileUpload(b.key,fileInput.files[0]));
-    const label=barEl.querySelector('label');
-    label.addEventListener('click',()=> fileInput.click());
+
+    // Conecta o input ao handleFileUpload
+    const fileInput = barEl.querySelector(`#progressPhoto-${b.key}`);
+    fileInput.addEventListener('change', (e) => {
+      handleFileUpload(b.key, e.target.files[0]);
+      e.target.value = ''; // limpa o input para permitir reenvio
+    });
+
     container.appendChild(barEl);
   });
+
   feather.replace();
 }
 
