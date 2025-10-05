@@ -287,7 +287,7 @@ get(ref(db, 'admins')).then(snap => {
     console.log('✅ Admin padrão criado: admin / 123456');
   }
 });
-  
+
 // === Escutas ===
 onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
 onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotification(`Mensagem Global: ${msg}`); });
