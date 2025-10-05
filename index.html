@@ -225,10 +225,19 @@ function createCredential(){
 
 // === Adicionar novas barras ===
 document.getElementById('addBarBtn').addEventListener('click',()=>{
-  const name=document.getElementById('newBarName').value.trim();
-  if(!name){ alert('Digite o nome da meta'); return; }
-  const member=prompt('Digite seu nome','Membro')||'Membro';
-  push(ref(db,'bars'),{name,member,progress:0,proofs:[]});
+  const name = document.getElementById('newBarName').value.trim();
+  if(!name){ 
+    alert('Digite o nome da meta'); 
+    return; 
+  }
+  const member = prompt('Digite seu nome','Membro') || 'Membro';
+
+  // SALVA O USUÁRIO ATUAL LOCALMENTE
+  localStorage.setItem('currentUser', member);
+
+  // ADICIONA A BARRA NO BANCO
+  push(ref(db,'bars'), { name, member, progress:0, proofs:[] });
+
   document.getElementById('newBarName').value='';
   showNotification('Meta adicionada!');
 });
