@@ -6,14 +6,36 @@
 <title>Progresso em Foco</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/feather-icons"></script>
+
 <style>
 :root { --primary-color: #3B82F6; }
 .progress-bar { transition: width 0.5s ease-in-out; }
 .notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
 @keyframes slideIn { from { transform: translateY(-100px); opacity:0;} to { transform: translateY(0); opacity:1; } }
 @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+
+/* === ANIMAÇÕES DO MODAL === */
+.fade-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.fade-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-leave {
+  opacity: 1;
+  transform: scale(1);
+}
+.fade-leave-active {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
 </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
 
 <!-- Notificação -->
@@ -24,9 +46,17 @@
   </div>
 </div>
 
+<!-- BOTÃO DE CONFIGURAÇÕES (CANTO SUPERIOR DIREITO) -->
+<button 
+  onclick="openSettingsModal()" 
+  class="fixed top-4 right-4 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition"
+>
+  <i data-feather="settings" class="w-6 h-6"></i>
+</button>
+
 <!-- Modal Configurações -->
 <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md overflow-auto max-h-[90vh]">
+  <div id="settingsContent" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md overflow-auto max-h-[90vh] fade-enter">
     <div class="flex justify-between items-center mb-6 border-b pb-4">
       <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
       <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700">
@@ -80,13 +110,10 @@
   </div>
 </div>
 
-<!-- Conteúdo -->
+<!-- Conteúdo Principal -->
 <div class="container mx-auto px-4 py-8">
   <header class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
-    <div class="flex space-x-4">
-      <button onclick="openSettingsModal()" class="p-2 rounded-full hover:bg-gray-200"><i data-feather="settings"></i></button>
-    </div>
   </header>
 
   <div class="bg-white rounded-lg shadow p-6 mb-8">
@@ -135,12 +162,27 @@ function showNotification(msg){
   setTimeout(()=>el.classList.add('hidden'),2500);
 }
 
-function openSettingsModal(){ document.getElementById('settingsModal').classList.remove('hidden'); }
-function closeSettingsModal(){ document.getElementById('settingsModal').classList.add('hidden'); }
+// === Funções do modal ===
+function openSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  const content = document.getElementById('settingsContent');
+  modal.classList.remove('hidden');
+  content.classList.remove('fade-leave-active');
+  content.classList.add('fade-enter-active');
+}
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  const content = document.getElementById('settingsContent');
+  content.classList.remove('fade-enter-active');
+  content.classList.add('fade-leave-active');
+  setTimeout(() => modal.classList.add('hidden'), 200);
+}
+
+// === Temas e cores ===
 function changeThemeColor(hex){ document.documentElement.style.setProperty('--primary-color', hex); showNotification('Tema alterado'); }
 function changeBarColor(hex){ barColor=hex; renderBars(); showNotification('Cor da barra alterada'); }
 
-// Login Admin
+// === Login Admin ===
 function loginAdmin(){
   const user=document.getElementById('adminUsername').value.trim();
   const pass=document.getElementById('adminPassword').value.trim();
@@ -157,7 +199,7 @@ function loginAdmin(){
   });
 }
 
-// Criar credenciais temporárias
+// === Criar credenciais ===
 function createCredential(){
   const user=document.getElementById('newCredentialUser').value.trim();
   const pass=document.getElementById('newCredentialPass').value.trim();
@@ -168,7 +210,7 @@ function createCredential(){
   document.getElementById('newCredentialPass').value='';
 }
 
-// Adicionar nova barra
+// === Adicionar novas barras ===
 document.getElementById('addBarBtn').addEventListener('click',()=>{
   const name=document.getElementById('newBarName').value.trim();
   if(!name){ alert('Digite o nome da meta'); return; }
@@ -178,7 +220,7 @@ document.getElementById('addBarBtn').addEventListener('click',()=>{
   showNotification('Meta adicionada!');
 });
 
-// Renderizar barras e leaderboard
+// === Renderização ===
 function renderBars(){
   const container = document.getElementById('barsContainer');
   container.innerHTML = '';
@@ -186,34 +228,24 @@ function renderBars(){
   leaderboard.innerHTML = '';
 
   bars.forEach(b => {
-    // Leaderboard
     const lbItem = document.createElement('div');
     lbItem.textContent = `${b.member}: ${b.progress}%`;
     lbItem.className = 'bg-gray-100 p-2 rounded';
     leaderboard.appendChild(lbItem);
 
-    // Barras
     const barEl = document.createElement('div');
     barEl.className = 'bg-white rounded-lg shadow p-6';
-    
     barEl.innerHTML = `
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">
-          <input type="text" value="${b.name}" onchange="updateBarName('${b.key}', this.value)" class="border-b border-gray-300 px-1">
-          <span class="text-sm text-gray-500"> | Membro:
-            <input type="text" value="${b.member || 'Membro'}" onchange="updateBarMember('${b.key}', this.value)" class="border-b border-gray-300 px-1">
-          </span>
-        </h3>
+        <h3 class="text-lg font-semibold">${b.name} | ${b.member}</h3>
         <button onclick="deleteBar('${b.key}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
       </div>
-
       <div class="flex items-center space-x-4 mb-2">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
           <div class="progress-bar h-full rounded-full" style="width:${b.progress}%; background-color:${barColor}"></div>
         </div>
         <span>${b.progress}%</span>
       </div>
-
       <div class="flex items-center gap-2">
         <input type="file" id="progressPhoto-${b.key}" accept="image/*" class="hidden">
         <label for="progressPhoto-${b.key}" class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
@@ -221,23 +253,13 @@ function renderBars(){
         </label>
       </div>
     `;
-
-    // Conecta o input ao handleFileUpload
-    const fileInput = barEl.querySelector(`#progressPhoto-${b.key}`);
-    fileInput.addEventListener('change', (e) => {
-      handleFileUpload(b.key, e.target.files[0]);
-      e.target.value = ''; // limpa o input para permitir reenvio
-    });
-
+    barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, e.target.files[0]));
     container.appendChild(barEl);
   });
-
   feather.replace();
 }
 
-// Atualizações
-function updateBarName(key,name){ set(ref(db,'bars/'+key+'/name'),name); showNotification('Nome da barra atualizado'); }
-function updateBarMember(key,member){ set(ref(db,'bars/'+key+'/member'),member); showNotification('Nome do membro atualizado'); }
+// === Atualizações e upload ===
 function deleteBar(key){ if(confirm('Deseja realmente excluir esta barra?')){ remove(ref(db,'bars/'+key)); showNotification('Barra excluída!'); } }
 function handleFileUpload(barKey,file){
   if(!file) return;
@@ -257,10 +279,11 @@ function sendGlobalMessage(){
   document.getElementById('globalMessageInput').value='';
 }
 
-// Escutar mudanças
+// === Escutas ===
 onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
 onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotification(`Mensagem Global: ${msg}`); });
 
+// === Feather Icons ===
 document.addEventListener('DOMContentLoaded',()=>{ feather.replace(); });
 </script>
 </body>
