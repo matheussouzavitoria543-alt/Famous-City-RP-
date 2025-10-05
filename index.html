@@ -218,12 +218,14 @@ function renderBars(){
     lbItem.className = 'bg-gray-100 p-2 rounded';
     leaderboard.appendChild(lbItem);
 
+    const canEdit = isAdmin || b.member === currentUser; // Permissão: admin ou dono da barra
+
     const barEl = document.createElement('div');
     barEl.className = 'bg-white rounded-lg shadow p-6';
     barEl.innerHTML = `
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">${b.name} | ${b.member}</h3>
-        <button onclick="deleteBar('${b.key}','${b.member}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
+        ${ canEdit ? `<button onclick="deleteBar('${b.key}','${b.member}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>` : '' }
       </div>
       <div class="flex items-center space-x-4 mb-2">
         <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
@@ -232,13 +234,18 @@ function renderBars(){
         <span>${b.progress}%</span>
       </div>
       <div class="flex items-center gap-2">
+        ${ canEdit ? `
         <input type="file" id="progressPhoto-${b.key}" accept="image/*" class="hidden">
         <label for="progressPhoto-${b.key}" class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
           <i data-feather="camera"></i> Enviar Prova
-        </label>
+        </label>` : '' }
       </div>
     `;
-    barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, b.member, e.target.files[0]));
+
+    if(canEdit){
+      barEl.querySelector(`#progressPhoto-${b.key}`).addEventListener('change', e => handleFileUpload(b.key, b.member, e.target.files[0]));
+    }
+
     container.appendChild(barEl);
   });
   feather.replace();
