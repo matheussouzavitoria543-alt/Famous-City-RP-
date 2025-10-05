@@ -11,13 +11,9 @@
 :root { --primary-color: #3B82F6; }
 .progress-bar { transition: width 0.5s ease-in-out; }
 .notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
+
 @keyframes slideIn { from { transform: translateY(-100px); opacity:0;} to { transform: translateY(0); opacity:1; } }
 @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
-/* Modal animações */
-.fade-enter { opacity: 0; transform: scale(0.95); }
-.fade-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.3s ease, transform 0.3s ease; }
-.fade-leave { opacity: 1; transform: scale(1); }
-.fade-leave-active { opacity: 0; transform: scale(0.95); transition: opacity 0.2s ease, transform 0.2s ease; }
 </style>
 </head>
 
@@ -38,7 +34,7 @@
 
 <!-- Modal Configurações -->
 <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div id="settingsContent" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md overflow-auto max-h-[90vh] fade-enter">
+  <div id="settingsContent" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md overflow-auto max-h-[90vh] opacity-0 scale-95 transition-all duration-300">
     <div class="flex justify-between items-center mb-6 border-b pb-4">
       <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
       <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700">
@@ -146,8 +142,19 @@ function showNotification(msg){
 }
 
 // Modal
-function openSettingsModal(){ document.getElementById('settingsModal').classList.remove('hidden'); }
-function closeSettingsModal(){ document.getElementById('settingsModal').classList.add('hidden'); }
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    const content = document.getElementById('settingsContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => { content.style.opacity = 1; content.style.transform = 'scale(1)'; }, 10);
+}
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    const content = document.getElementById('settingsContent');
+    content.style.opacity = 0;
+    content.style.transform = 'scale(0.95)';
+    setTimeout(() => modal.classList.add('hidden'), 200);
+}
 
 // Cores
 function changeThemeColor(hex){ document.documentElement.style.setProperty('--primary-color', hex); showNotification('Tema alterado'); }
