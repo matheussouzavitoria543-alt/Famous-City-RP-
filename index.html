@@ -279,6 +279,15 @@ function sendGlobalMessage(){
   document.getElementById('globalMessageInput').value='';
 }
 
+// === Criar admin padrão se não existir ===
+get(ref(db, 'admins')).then(snap => {
+  if (!snap.exists()) {
+    const newAdminRef = push(ref(db, 'admins'));
+    set(newAdminRef, { username: 'admin', password: '123456' });
+    console.log('✅ Admin padrão criado: admin / 123456');
+  }
+});
+  
 // === Escutas ===
 onValue(ref(db,'bars'),snap=>{ bars=Object.entries(snap.val()||{}).map(([key,val])=>({key,...val})); renderBars(); });
 onValue(ref(db,'globalMessage'),snap=>{ const msg=snap.val(); if(msg) showNotification(`Mensagem Global: ${msg}`); });
